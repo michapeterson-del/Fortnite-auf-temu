@@ -13,6 +13,8 @@ const EYE_COLORS = [0x3b2a1a, 0x2f6fd6, 0x3f8f3a, 0x5a4632];
 const SHAPE = {
   box: new THREE.BoxGeometry(1, 1, 1, 1, 1, 1).toNonIndexed(),
   sph: new THREE.SphereGeometry(0.5, 16, 12).toNonIndexed(),
+  sphS: new THREE.SphereGeometry(0.5, 8, 6).toNonIndexed(),
+  ico: new THREE.IcosahedronGeometry(0.5, 1),
   cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 14).toNonIndexed(),
   cone: new THREE.ConeGeometry(0.5, 1, 10).toNonIndexed(),
 };
@@ -20,7 +22,7 @@ const capCache = new Map();
 function capsuleShape(r, len) {
   const k = r.toFixed(3) + '|' + len.toFixed(3);
   let g = capCache.get(k);
-  if (!g) { g = new THREE.CapsuleGeometry(r, len, 5, 12).toNonIndexed(); capCache.set(k, g); }
+  if (!g) { g = (r < 0.03 ? new THREE.CapsuleGeometry(r, len, 2, 6) : new THREE.CapsuleGeometry(r, len, 4, 10)).toNonIndexed(); capCache.set(k, g); }
   return g;
 }
 
@@ -29,7 +31,9 @@ const _cm = new THREE.Matrix4(), _cq = new THREE.Quaternion(), _ce = new THREE.E
 function mergeParts(list) {
   const pos = [], nor = [], col = [];
   for (const p of list) {
-    const src = p.s === 'cap' ? capsuleShape(p.r, p.len) : SHAPE[p.s];
+    // kleine Kugeln (Augen, Lippen, …) automatisch gröber auflösen
+    const small = p.s === 'sph' && Math.max(p.sx || 1, p.sy || 1, p.sz || 1) < 0.09;
+    const src = p.s === 'cap' ? capsuleShape(p.r, p.len) : SHAPE[small ? 'sphS' : p.s];
     _ce.set(p.rx || 0, p.ry || 0, p.rz || 0);
     _cq.setFromEuler(_ce);
     _cm.compose(_cp.set(p.x || 0, p.y || 0, p.z || 0), _cq, _cs.set(p.sx || 1, p.sy || 1, p.sz || 1));
@@ -94,6 +98,11 @@ function characterGeometries(o) {
     { s: 'cyl', x: 0.1, y: 0.36, z: -0.128, rx: Math.PI / 2, sx: 0.08, sy: 0.012, sz: 0.08, c: o.accent },
     { s: 'cyl', y: 0.55, sx: 0.2, sy: 0.06, sz: 0.17, c: shirtD },
     { s: 'cyl', y: 0.6, sx: 0.1, sy: 0.14, sz: 0.1, c: skinD },
+    // Kapuze im Nacken, Brusttaschen, Saum
+    { s: 'sph', y: 0.53, z: 0.1, sx: 0.32, sy: 0.14, sz: 0.2, c: shirtD },
+    { s: 'box', x: -0.1, y: 0.12, z: -0.118, sx: 0.12, sy: 0.08, sz: 0.02, c: shirtD },
+    { s: 'box', x: 0.1, y: 0.12, z: -0.118, sx: 0.12, sy: 0.08, sz: 0.02, c: shirtD },
+    { s: 'cyl', y: -0.04, sx: 0.37, sy: 0.04, sz: 0.25, c: shirtD },
     // Rucksack mit Tasche und Gurten
     { s: 'box', y: 0.3, z: 0.2, sx: 0.34, sy: 0.4, sz: 0.14, c: o.pack },
     { s: 'sph', y: 0.49, z: 0.2, sx: 0.34, sy: 0.08, sz: 0.14, c: o.pack },
@@ -113,11 +122,26 @@ function characterGeometries(o) {
     { s: 'sph', x: 0.05, y: 0.169, z: -0.117, sx: 0.026, sy: 0.03, sz: 0.012, c: o.eyes },
     { s: 'box', x: -0.05, y: 0.205, z: -0.113, rz: 0.12, sx: 0.056, sy: 0.013, sz: 0.012, c: shade(hair, 0.8) },
     { s: 'box', x: 0.05, y: 0.205, z: -0.113, rz: -0.12, sx: 0.056, sy: 0.013, sz: 0.012, c: shade(hair, 0.8) },
-    { s: 'sph', y: 0.13, z: -0.122, sx: 0.034, sy: 0.05, sz: 0.04, c: skinD },
-    { s: 'box', y: 0.085, z: -0.112, sx: 0.06, sy: 0.012, sz: 0.01, c: 0x8a3b3b },
+    { s: 'sph', x: -0.05, y: 0.169, z: -0.124, sx: 0.013, sy: 0.015, sz: 0.006, c: 0x0c0c10 },
+    { s: 'sph', x: 0.05, y: 0.169, z: -0.124, sx: 0.013, sy: 0.015, sz: 0.006, c: 0x0c0c10 },
+    { s: 'sph', x: -0.043, y: 0.177, z: -0.127, sx: 0.008, sy: 0.008, sz: 0.004, c: 0xffffff },
+    { s: 'sph', x: 0.057, y: 0.177, z: -0.127, sx: 0.008, sy: 0.008, sz: 0.004, c: 0xffffff },
+    { s: 'sph', x: -0.05, y: 0.186, z: -0.103, sx: 0.06, sy: 0.022, sz: 0.03, c: skinD },
+    { s: 'sph', x: 0.05, y: 0.186, z: -0.103, sx: 0.06, sy: 0.022, sz: 0.03, c: skinD },
+    { s: 'box', y: 0.15, z: -0.118, sx: 0.022, sy: 0.05, sz: 0.02, c: skin },
+    { s: 'sph', y: 0.128, z: -0.125, sx: 0.038, sy: 0.034, sz: 0.036, c: skinD },
+    { s: 'sph', x: -0.078, y: 0.115, z: -0.088, sx: 0.045, sy: 0.03, sz: 0.02, c: shade(0xe0806a, 1.0) },
+    { s: 'sph', x: 0.078, y: 0.115, z: -0.088, sx: 0.045, sy: 0.03, sz: 0.02, c: shade(0xe0806a, 1.0) },
+    { s: 'sph', y: 0.089, z: -0.112, sx: 0.055, sy: 0.014, sz: 0.018, c: 0xb4605a },
+    { s: 'sph', y: 0.078, z: -0.11, sx: 0.05, sy: 0.016, sz: 0.018, c: 0xc4706a },
+    { s: 'sph', y: 0.04, z: -0.075, sx: 0.07, sy: 0.04, sz: 0.05, c: skin },
   ];
   const cap = { s: 'sph', y: 0.235, z: 0.01, sx: 0.262, sy: 0.2, sz: 0.272, c: hair };
   const back = { s: 'sph', y: 0.16, z: 0.05, sx: 0.25, sy: 0.22, sz: 0.2, c: hair };
+  if (o.hairStyle !== 'muetze') {
+    head.push({ s: 'sph', y: 0.245, z: -0.085, rx: 0.4, sx: 0.23, sy: 0.08, sz: 0.1, c: hair });
+    head.push({ s: 'box', x: -0.117, y: 0.16, z: -0.03, sx: 0.02, sy: 0.07, sz: 0.04, c: hair }, { s: 'box', x: 0.117, y: 0.16, z: -0.03, sx: 0.02, sy: 0.07, sz: 0.04, c: hair });
+  }
   if (o.hairStyle === 'muetze') {
     head.push({ s: 'sph', y: 0.245, sx: 0.27, sy: 0.22, sz: 0.28, c: o.accent }, { s: 'cyl', y: 0.2, sx: 0.272, sy: 0.05, sz: 0.282, c: shade(o.accent, 0.75) }, { s: 'sph', y: 0.37, sx: 0.07, sy: 0.07, sz: 0.07, c: 0xffffff });
   } else {
@@ -142,8 +166,14 @@ function characterGeometries(o) {
   const foreArm = [
     { s: 'cap', r: 0.053, len: 0.14, y: -0.11, c: o.longSleeve ? shirt : skin },
     { s: 'cyl', y: -0.2, sx: 0.115, sy: 0.035, sz: 0.115, c: o.longSleeve ? o.accent : shirtD },
-    { s: 'sph', y: -0.28, sx: 0.1, sy: 0.12, sz: 0.085, c: glove },
-    { s: 'sph', y: -0.26, z: -0.045, sx: 0.04, sy: 0.07, sz: 0.04, c: glove },
+    { s: 'sph', y: -0.27, sx: 0.095, sy: 0.1, sz: 0.06, c: glove },
+    // vier Finger (leicht gekrümmt) und Daumen
+    { s: 'cap', r: 0.013, len: 0.045, x: -0.03, y: -0.335, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.014, len: 0.052, x: -0.01, y: -0.34, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.014, len: 0.05, x: 0.01, y: -0.338, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.012, len: 0.04, x: 0.03, y: -0.33, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.015, len: 0.04, y: -0.27, z: -0.045, rx: 0.9, c: glove },
+    { s: 'box', y: -0.225, sx: 0.1, sy: 0.02, sz: 0.07, c: o.gloves ? 0x3a3f4a : skinD },
   ];
   // Oberschenkel (Hüftgelenk-Raum)
   const thigh = [
@@ -153,12 +183,21 @@ function characterGeometries(o) {
   // Unterschenkel + Schuh (Knie-Raum)
   const shin = [
     { s: 'sph', y: 0.0, sx: 0.15, sy: 0.14, sz: 0.15, c: pantsD },
-    { s: 'cap', r: 0.072, len: 0.24, y: -0.19, c: pants },
-    { s: 'sph', y: -0.4, z: -0.055, sx: 0.13, sy: 0.11, sz: 0.27, c: shoe },
-    { s: 'box', y: -0.445, z: -0.055, sx: 0.125, sy: 0.03, sz: 0.26, c: sole },
-    { s: 'box', y: -0.37, z: -0.12, sx: 0.06, sy: 0.02, sz: 0.1, c: 0xffffff },
+    { s: 'sph', y: -0.03, z: -0.06, sx: 0.12, sy: 0.12, sz: 0.06, c: shade(o.accent, 0.55) },
+    { s: 'cap', r: 0.072, len: 0.22, y: -0.18, c: pants },
+    { s: 'cyl', y: -0.33, sx: 0.15, sy: 0.05, sz: 0.15, c: pantsD },
   ];
-  set = { pelvis: mergeParts(pelvis), chest: mergeParts(chest), head: mergeParts(head), upperArm: mergeParts(upperArm), foreArm: mergeParts(foreArm), thigh: mergeParts(thigh), shin: mergeParts(shin) };
+  // Fuß/Schuh (Sprunggelenk-Raum)
+  const foot = [
+    { s: 'sph', y: -0.035, z: -0.055, sx: 0.13, sy: 0.1, sz: 0.27, c: shoe },
+    { s: 'sph', y: -0.01, z: 0.03, sx: 0.12, sy: 0.12, sz: 0.12, c: shoe },
+    { s: 'box', y: -0.082, z: -0.055, sx: 0.126, sy: 0.03, sz: 0.265, c: sole },
+    { s: 'box', y: 0.0, z: -0.1, rx: -0.25, sx: 0.07, sy: 0.015, sz: 0.1, c: 0xffffff },
+    { s: 'box', y: 0.006, z: -0.075, rx: -0.25, sx: 0.07, sy: 0.012, sz: 0.012, c: 0xffffff },
+    { s: 'box', y: 0.012, z: -0.125, rx: -0.25, sx: 0.07, sy: 0.012, sz: 0.012, c: 0xffffff },
+    { s: 'box', y: -0.04, z: -0.19, sx: 0.12, sy: 0.05, sz: 0.02, c: o.accent },
+  ];
+  set = { pelvis: mergeParts(pelvis), chest: mergeParts(chest), head: mergeParts(head), upperArm: mergeParts(upperArm), foreArm: mergeParts(foreArm), thigh: mergeParts(thigh), shin: mergeParts(shin), foot: mergeParts(foot) };
   charGeoCache.set(key, set);
   return set;
 }
@@ -181,6 +220,8 @@ function createCharacterMesh(outfitIn) {
   const hipR = joint(pelvis, 0.1, -0.04, 0); mesh(hipR, G.thigh);
   const knL = joint(hipL, 0, -0.42, 0); mesh(knL, G.shin);
   const knR = joint(hipR, 0, -0.42, 0); mesh(knR, G.shin);
+  const anL = joint(knL, 0, -0.36, 0); mesh(anL, G.foot);
+  const anR = joint(knR, 0, -0.36, 0); mesh(anR, G.foot);
   // Gleiter
   const glider = new THREE.Group();
   const canopy = new THREE.Mesh(gliderGeo, new THREE.MeshStandardMaterial({ color: o.shirt, side: THREE.DoubleSide, roughness: 0.5 }));
@@ -196,19 +237,19 @@ function createCharacterMesh(outfitIn) {
   }
   glider.visible = false;
   g.add(glider);
-  return { group: g, pelvis, spine, neck, shL, shR, elL, elR, hand, hipL, hipR, knL, knR, glider, held: null, heldKey: '', cur: {}, tgt: {} };
+  return { group: g, pelvis, spine, neck, shL, shR, elL, elR, hand, hipL, hipR, knL, knR, anL, anR, glider, held: null, heldKey: '', cur: {}, tgt: {} };
 }
 
 // ---------------------------------------------------------------------
 // Animation: Zielpose pro Zustand, Gelenke blenden weich (~0,15 s)
 // ---------------------------------------------------------------------
-const POSE_KEYS = ['pelvisY', 'pelvisX', 'spineX', 'spineY', 'neckX', 'neckY', 'shLX', 'shLZ', 'elL', 'shRX', 'shRZ', 'elR', 'hipLX', 'hipRX', 'knL', 'knR'];
+const POSE_KEYS = ['pelvisY', 'pelvisX', 'spineX', 'spineY', 'neckX', 'neckY', 'shLX', 'shLZ', 'elL', 'shRX', 'shRZ', 'elR', 'hipLX', 'hipRX', 'knL', 'knR', 'anL', 'anR'];
 
 function computePose(T, P) {
   const W0 = CONFIG.player.walkSpeed;
   T.pelvisY = 0.92; T.pelvisX = 0; T.spineX = 0; T.spineY = 0; T.neckX = 0; T.neckY = 0;
   T.shLX = 0.05; T.shLZ = -0.12; T.elL = 0.18; T.shRX = 0.05; T.shRZ = 0.12; T.elR = 0.18;
-  T.hipLX = 0; T.hipRX = 0; T.knL = 0; T.knR = 0;
+  T.hipLX = 0; T.hipRX = 0; T.knL = 0; T.knR = 0; T.anL = 0; T.anR = 0;
   const t = P.time;
   if (P.state === 'dead') {
     const k = Math.min(1, P.deadT / 0.6);
@@ -219,7 +260,7 @@ function computePose(T, P) {
   if (P.state === 'freefall') {
     T.pelvisX = -1.35; T.pelvisY = 1.05; T.neckX = 1.05;
     T.shLX = 0.25; T.shLZ = -1.35 + Math.sin(t * 7) * 0.05; T.shRX = 0.25; T.shRZ = 1.35 - Math.sin(t * 7) * 0.05; T.elL = 0.5; T.elR = 0.5;
-    T.hipLX = 0.15; T.hipRX = 0.05; T.knL = -0.6; T.knR = -0.4;
+    T.hipLX = 0.15; T.hipRX = 0.05; T.knL = -0.6; T.knR = -0.4; T.anL = 0.6; T.anR = 0.6;
     return;
   }
   if (P.state === 'glide') {
@@ -249,6 +290,10 @@ function computePose(T, P) {
   if (P.crouch && !P.air) {
     T.pelvisY -= 0.44; T.hipLX += 1.3; T.hipRX += 1.3; T.knL -= 2.0; T.knR -= 2.0; T.spineX -= 0.3; T.neckX += 0.25;
   }
+  // Sprunggelenke: Fuß flach zum Boden (Becken-Neigung mit eingerechnet)
+  const flat = P.air ? 0.45 : 1;
+  T.anL = -(T.hipLX + T.knL + T.pelvisX) * flat + (P.air ? 0.35 : 0);
+  T.anR = -(T.hipRX + T.knR + T.pelvisX) * flat + (P.air ? 0.35 : 0);
   // Oberkörper je nach Aktion
   const pitch = P.pitch || 0;
   if (P.action === 'aim') {
@@ -279,6 +324,7 @@ function applyPose(m, P, dt) {
   m.elL.rotation.x = C.elL; m.elR.rotation.x = C.elR;
   m.hipL.rotation.x = C.hipLX; m.hipR.rotation.x = C.hipRX;
   m.knL.rotation.x = C.knL; m.knR.rotation.x = C.knR;
+  m.anL.rotation.x = C.anL; m.anR.rotation.x = C.anR;
 }
 
 const _pose = { state: 'ground', speed: 0, phase: 0, air: false, crouch: false, action: 'pickaxe', pitch: 0, recoil: 0, swingT: 0, time: 0, deadT: 0, instant: false };

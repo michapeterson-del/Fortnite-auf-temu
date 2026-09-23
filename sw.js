@@ -1,5 +1,5 @@
 // Offline-Cache für die Home-Bildschirm-App: nach dem ersten Öffnen läuft alles ohne Internet.
-const CACHE = 'fortnite-temu-v6';
+const CACHE = 'fortnite-temu-v7';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

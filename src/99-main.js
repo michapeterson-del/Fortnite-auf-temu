@@ -433,6 +433,7 @@ window.__game = {
   makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
   get player() { return player; }, get state() { return gameState; }, collapseQueue, lobby,
   fx: { explosion, applyTimeOfDay, setTodMode, barrels, damageBarrel },
+  dbg: { renderer, renderFrame, post, grass: grassField, get gl() { return renderer.getContext(); } },
   startNow: () => { $('lobby').classList.add('hidden'); startGame(); },
 };
 

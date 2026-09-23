@@ -366,7 +366,7 @@ const CONFIG = {
     shadowArea: 60, visibleActorDistance: 320, visibleItemDistance: 90,
     quality: {
       niedrig: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, grass: 0, post: false },
-      mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 1024, grass: 1, post: true },
+      mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
       hoch:    { pixelRatio: 1.5,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
     },
     defaultQuality: 'mittel',
@@ -1700,12 +1700,15 @@ function buildTerrainMesh() {
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
   scene.add(mesh);
+  terrainMesh = mesh;
+  patchTerrain(mesh.material);
 
   waterMesh = new THREE.Mesh(new THREE.PlaneGeometry(W.size * 3, W.size * 3),
     new THREE.MeshStandardMaterial({ color: 0x14597f, roughness: 0.08, metalness: 0.1, normalMap: waterNormal, normalScale: new THREE.Vector2(0.45, 0.45), transparent: true, opacity: 0.9, envMapIntensity: 1.1 }));
   waterMesh.rotation.x = -Math.PI / 2;
   waterMesh.position.y = W.waterLevel;
   waterMesh.receiveShadow = true;
+  patchWater(waterMesh.material);
   scene.add(waterMesh);
 }
 
@@ -1814,11 +1817,10 @@ function populateNature(rnd) {
 
   // Bäume: Nadelbäume (zwei Kegel) und Laubbäume (Kugel-Krone)
   const trunkGeo = new THREE.CylinderGeometry(0.2, 0.34, 1, 7);
-  const coneGeo = new THREE.ConeGeometry(1, 1, 8);
   const blobGeo = new THREE.IcosahedronGeometry(1, 1);
   const trunks = new THREE.InstancedMesh(trunkGeo, texMat('bark', 0xffffff), W.trees);
-  const cones = new THREE.InstancedMesh(coneGeo, flat(), W.trees * 2);
-  const blobs = new THREE.InstancedMesh(blobGeo, flat(), W.trees);
+  const cones = new THREE.InstancedMesh(pineCrownGeometry(), windify(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.035), W.trees);
+  const blobs = new THREE.InstancedMesh(broadCrownGeometry(), windify(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.05), W.trees);
   let tc = 0, cc = 0, bc = 0;
   for (let t = 0; t < W.trees * 6 && tc < W.trees; t++) {
     const x = (rnd() * 2 - 1) * HALF * 0.9, z = (rnd() * 2 - 1) * HALF * 0.9;
@@ -1830,21 +1832,23 @@ function populateNature(rnd) {
     m.compose(p, q, s); trunks.setMatrixAt(tc, m);
     let topY;
     if (pine) {
-      const r = 1.9 + rnd() * 1.1, hh = 4 + rnd() * 2.5;
-      col.setHSL(0.33 + rnd() * 0.05, 0.45 + rnd() * 0.15, 0.24 + rnd() * 0.08);
-      p.set(x, g + th + hh / 2 - 0.8, z); s.set(r, hh, r); m.compose(p, q, s); cones.setMatrixAt(cc, m); cones.setColorAt(cc++, col);
-      p.set(x, g + th + hh - 0.6, z); s.set(r * 0.7, hh * 0.75, r * 0.7); m.compose(p, q, s); cones.setMatrixAt(cc, m); cones.setColorAt(cc++, col);
-      topY = g + th + hh * 1.3;
+      const r = 2.1 + rnd() * 1.2, hh = 6 + rnd() * 3.5;
+      col.setHSL(0.34 + rnd() * 0.05, 0.42 + rnd() * 0.15, 0.2 + rnd() * 0.07);
+      e.set(0, rnd() * Math.PI * 2, 0); q.setFromEuler(e);
+      p.set(x, g + th - 0.9, z); s.set(r, hh, r); m.compose(p, q, s); cones.setMatrixAt(cc, m); cones.setColorAt(cc++, col);
+      q.identity();
+      topY = g + th + hh;
     } else {
       const r = 2 + rnd() * 1.3;
       col.setHSL(0.22 + rnd() * 0.1, 0.5 + rnd() * 0.2, 0.33 + rnd() * 0.1);
       e.set(rnd(), rnd() * 3, rnd()); q.setFromEuler(e);
-      p.set(x, g + th + r * 0.6, z); s.set(r, r * 0.85, r); m.compose(p, q, s); blobs.setMatrixAt(bc, m); blobs.setColorAt(bc++, col);
+      p.set(x, g + th - r * 0.35, z); s.set(r * 1.3, r * 1.2, r * 1.3); m.compose(p, q, s); blobs.setMatrixAt(bc, m); blobs.setColorAt(bc++, col);
       q.identity();
       topY = g + th + r * 1.4;
     }
     const c = addCollider([x - 0.3, g - 0.5, z - 0.3, x + 0.3, topY, z + 0.3], false);
     c.material = 'tree';
+    aoSpots.push([x, z, 3.2, 0.55]);
     tc++;
   }
   trunks.count = tc; cones.count = cc; blobs.count = bc;
@@ -1864,6 +1868,7 @@ function populateNature(rnd) {
     const r = sc * 0.8;
     const c = addCollider([x - r, g - 1, z - r, x + r, g + sc * 0.35 + sc * 0.7, z + r], false);
     c.material = 'rock';
+    aoSpots.push([x, z, r * 1.7, 0.6]);
     if (rnd() < 0.18) lootSpawns.chests.push({ x: x + r + 1.2, y: getHeight(x + r + 1.2, z), z, yaw: -Math.PI / 2, outdoor: true });
     rc++;
   }
@@ -1926,6 +1931,7 @@ function populateNature(rnd) {
     const g = getHeight(x, z);
     const c = addStaticBox(x - 0.75, g - 0.4, z - 0.75, x + 0.75, g + 1.5, z + 0.75, texMat('wood', 0xc79a6a), false);
     c.material = 'crate';
+    aoSpots.push([x, z, 1.8, 0.55]);
     crates++;
   }
 
@@ -1939,31 +1945,6 @@ function populateNature(rnd) {
   }
 }
 
-function buildClouds(rnd) {
-  cloudGroup = new THREE.Group();
-  const geo = new THREE.IcosahedronGeometry(1, 1);
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x8899aa, flatShading: true, fog: false });
-  const perCloud = 6;
-  const im = new THREE.InstancedMesh(geo, mat, W.clouds * perCloud);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  let i = 0;
-  for (let c = 0; c < W.clouds; c++) {
-    const ang = rnd() * Math.PI * 2, dist = 120 + rnd() * 520;
-    const cx = Math.cos(ang) * dist, cz = Math.sin(ang) * dist, cy = 270 + rnd() * 60;
-    const size = 10 + rnd() * 14;
-    for (let k = 0; k < perCloud; k++) {
-      p.set(cx + (rnd() - 0.5) * size * 2.2, cy + (rnd() - 0.3) * size * 0.4, cz + (rnd() - 0.5) * size);
-      const r = size * (0.5 + rnd() * 0.6);
-      s.set(r, r * 0.55, r * 0.8);
-      m.compose(p, q, s); im.setMatrixAt(i++, m);
-    }
-  }
-  im.instanceMatrix.needsUpdate = true;
-  im.frustumCulled = false;
-  cloudGroup.add(im);
-  scene.add(cloudGroup);
-}
-
 function buildWorld() {
   generateHeights();
   const rnd = mulberry32(W.seed ^ 0x5bd1e995);
@@ -1971,7 +1952,8 @@ function buildWorld() {
   buildTerrainMesh();
   for (const h of houses) buildHouse(h);
   populateNature(rnd);
-  buildClouds(rnd);
+  buildSoftClouds(rnd);
+  bakeTerrainAO();
   spawnBarrels(rnd);
   // Truhen draußen auffüllen, falls die Steine zu wenige geliefert haben
   for (let t = 0; t < 400 && lootSpawns.chests.filter((c) => c.outdoor).length < CONFIG.loot.chestsOutdoor; t++) {
@@ -1982,6 +1964,239 @@ function buildWorld() {
     if (grid.query(qMin, qMax, qList).length) continue;
     lootSpawns.chests.push({ x, y: h, z, yaw: rnd() * Math.PI * 2, outdoor: true });
   }
+}
+
+// ===== 32-worldfx.js =====
+// ---------------------------------------------------------------------
+// Welt-Feinschliff: organische Baumkronen mit Wind, weiche Wolken,
+// Wasser mit Tiefe und Uferschaum, Felsen an Hängen, Kontaktschatten
+// ---------------------------------------------------------------------
+let terrainMesh = null;
+const aoSpots = [];
+
+// Felsstruktur für steile Hänge
+const ROCK_TEX = canvasTexture(256, (g, s) => {
+  g.fillStyle = '#d8d4cc'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 1800; i++) {
+    const v = Math.floor(rand(150, 245));
+    g.fillStyle = 'rgba(' + v + ',' + (v - 4) + ',' + (v - 10) + ',0.55)';
+    g.fillRect(Math.random() * s, Math.random() * s, rand(2, 9), rand(2, 6));
+  }
+  g.strokeStyle = 'rgba(60,55,50,0.45)';
+  for (let i = 0; i < 26; i++) {
+    g.lineWidth = rand(0.8, 2);
+    g.beginPath();
+    let x = Math.random() * s, y = Math.random() * s;
+    g.moveTo(x, y);
+    for (let k = 0; k < 5; k++) { x += rand(-24, 24); y += rand(4, 22); g.lineTo(x, y); }
+    g.stroke();
+  }
+});
+
+// Gleichmäßiges Rauschen aus der Position (gleiche Ecke → gleicher Wert, keine Risse)
+function posNoise(x, y, z) {
+  const h = Math.sin(Math.round(x * 97) * 12.9898 + Math.round(y * 97) * 78.233 + Math.round(z * 97) * 37.719) * 43758.5453;
+  return h - Math.floor(h);
+}
+
+// Teile zusammenfügen, organisch verbeulen und von unten nach oben aufhellen
+function organicCrown(parts, amp, dark, light) {
+  const geo = mergeParts(parts);
+  const pos = geo.attributes.position, nor = geo.attributes.normal, col = geo.attributes.color;
+  let minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < pos.count; i++) { minY = Math.min(minY, pos.getY(i)); maxY = Math.max(maxY, pos.getY(i)); }
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const n = posNoise(x, y, z) - 0.5;
+    pos.setXYZ(i, x + nor.getX(i) * n * amp, y + nor.getY(i) * n * amp * 0.6, z + nor.getZ(i) * n * amp);
+    const k = (y - minY) / (maxY - minY);
+    const lum = dark + (light - dark) * k + (posNoise(z, x, y) - 0.5) * 0.12;
+    col.setXYZ(i, col.getX(i) * lum, col.getY(i) * lum, col.getZ(i) * lum);
+  }
+  pos.needsUpdate = true; col.needsUpdate = true;
+  geo.computeBoundingSphere();
+  return geo;
+}
+
+function pineCrownGeometry() {
+  const layers = [[1.0, 0.42, 0.21], [0.82, 0.4, 0.4], [0.64, 0.36, 0.58], [0.44, 0.3, 0.75], [0.24, 0.24, 0.9]];
+  return organicCrown(layers.map(([r, h, y]) => ({ s: 'cone', y, sx: 2 * r, sy: h, sz: 2 * r, c: 0xffffff })), 0.09, 0.45, 1.15);
+}
+
+function broadCrownGeometry() {
+  const blobs = [[0, 0.5, 0, 1.25], [0.45, 0.45, 0.2, 0.85], [-0.42, 0.5, -0.25, 0.9], [0.1, 0.84, -0.1, 0.85], [-0.2, 0.38, 0.45, 0.8]];
+  return organicCrown(blobs.map(([x, y, z, d]) => ({ s: 'ico', x, y, z, sx: d, sy: d * 0.9, sz: d, c: 0xffffff })), 0.14, 0.5, 1.2);
+}
+
+// Wind: Spitzen schwingen, Fuß bleibt stehen
+function windify(mat, strength) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.time = grassField.time;
+    sh.vertexShader = 'uniform float time;\n' + sh.vertexShader.replace('#include <begin_vertex>', [
+      '#include <begin_vertex>',
+      'vec4 wIw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);',
+      'float wS = (sin(time * 1.3 + wIw.x * 0.07 + wIw.z * 0.05) * 0.6 + sin(time * 2.7 + wIw.z * 0.13 + wIw.x * 0.02) * 0.25) * ' + strength.toFixed(3) + ' * max(position.y, 0.0);',
+      'transformed.x += wS; transformed.z += wS * 0.5;',
+    ].join('\n'));
+  };
+  return mat;
+}
+
+// ---------------------------------------------------------------------
+// Weiche Wolken: Billboards im Vertex-Shader, ein Draw Call
+// ---------------------------------------------------------------------
+const CLOUD_TEX = (() => {
+  const s = 128, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  for (let i = 0; i < 40; i++) {
+    const x = s / 2 + rand(-s * 0.26, s * 0.26), y = s / 2 + rand(-s * 0.16, s * 0.2), r = rand(s * 0.1, s * 0.24);
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, 'rgba(255,255,255,0.32)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  }
+  const t = new THREE.CanvasTexture(c);
+  return t;
+})();
+
+function buildSoftClouds(rnd) {
+  cloudGroup = new THREE.Group();
+  const perCloud = 11, n = W.clouds * perCloud;
+  const plane = new THREE.PlaneGeometry(1, 1);
+  const geo = new THREE.InstancedBufferGeometry();
+  geo.index = plane.index;
+  geo.setAttribute('position', plane.attributes.position);
+  geo.setAttribute('uv', plane.attributes.uv);
+  const off = new Float32Array(n * 3), size = new Float32Array(n), shade = new Float32Array(n);
+  let i = 0;
+  for (let c = 0; c < W.clouds; c++) {
+    const ang = rnd() * Math.PI * 2, dist = 100 + rnd() * 560;
+    const cx = Math.cos(ang) * dist, cz = Math.sin(ang) * dist, cy = 260 + rnd() * 80;
+    const sz = 16 + rnd() * 20;
+    for (let k = 0; k < perCloud; k++) {
+      off[i * 3] = cx + (rnd() - 0.5) * sz * 2.6;
+      off[i * 3 + 1] = cy + (rnd() - 0.2) * sz * 0.45;
+      off[i * 3 + 2] = cz + (rnd() - 0.5) * sz * 1.6;
+      size[i] = sz * (0.9 + rnd() * 1.1);
+      shade[i] = rnd();
+      i++;
+    }
+  }
+  geo.setAttribute('offset', new THREE.InstancedBufferAttribute(off, 3));
+  geo.setAttribute('size', new THREE.InstancedBufferAttribute(size, 1));
+  geo.setAttribute('shade', new THREE.InstancedBufferAttribute(shade, 1));
+  geo.instanceCount = n;
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { map: { value: CLOUD_TEX }, sunColor: { value: sun.color }, skyColor: { value: skyMat.uniforms.horizon.value }, sunDir: { value: SUN_DIR } },
+    vertexShader: [
+      'attribute vec3 offset; attribute float size; attribute float shade; varying vec2 vUv; varying float vShade; varying float vSunSide;',
+      'uniform vec3 sunDir;',
+      'void main(){ vUv = uv; vShade = shade;',
+      '  vec4 mv = modelViewMatrix * vec4(offset, 1.0);',
+      '  mv.xy += position.xy * vec2(size, size * 0.62);',
+      '  vec3 viewSun = normalize((viewMatrix * vec4(sunDir, 0.0)).xyz);',
+      '  vSunSide = dot(normalize(vec3(position.xy, 0.4)), viewSun) * 0.5 + 0.5;',
+      '  gl_Position = projectionMatrix * mv; }',
+    ].join('\n'),
+    fragmentShader: [
+      'uniform sampler2D map; uniform vec3 sunColor; uniform vec3 skyColor; varying vec2 vUv; varying float vShade; varying float vSunSide;',
+      'void main(){ vec4 t = texture2D(map, vUv); if (t.a < 0.01) discard;',
+      '  float lit = clamp(vUv.y * 0.7 + vSunSide * 0.5 - 0.1 + vShade * 0.15, 0.0, 1.0);',
+      '  vec3 base = mix(skyColor * 0.72 + vec3(0.1), vec3(1.0) * 0.6 + sunColor * 0.25, lit);',
+      '  gl_FragColor = vec4(base * 1.05, t.a * 0.95);',
+      '  #include <tonemapping_fragment>',
+      '  #include <colorspace_fragment>',
+      '}',
+    ].join('\n'),
+    transparent: true, depthWrite: false, fog: false,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = -5;
+  cloudGroup.add(mesh);
+  scene.add(cloudGroup);
+}
+
+// ---------------------------------------------------------------------
+// Wasser: Farbe nach Tiefe (türkis → tiefblau), Schaum an der Küste
+// ---------------------------------------------------------------------
+function patchWater(mat) {
+  const data = new Uint8Array(HM_N * HM_N * 4);
+  for (let i = 0; i < HM_N * HM_N; i++) {
+    const d = clamp((W.waterLevel - heights[i]) / 6, 0, 1) * 255;
+    data[i * 4] = d; data[i * 4 + 1] = d; data[i * 4 + 2] = d; data[i * 4 + 3] = 255;
+  }
+  const depthTex = new THREE.DataTexture(data, HM_N, HM_N, THREE.RGBAFormat);
+  depthTex.magFilter = THREE.LinearFilter; depthTex.minFilter = THREE.LinearFilter;
+  depthTex.needsUpdate = true;
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.depthTex = { value: depthTex };
+    sh.uniforms.time = grassField.time;
+    sh.uniforms.islandHalf = { value: HALF };
+    sh.uniforms.islandSize = { value: W.size };
+    sh.vertexShader = 'varying vec2 vWXZ;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvWXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = 'uniform sampler2D depthTex; uniform float time; uniform float islandHalf; uniform float islandSize; varying vec2 vWXZ;\n' +
+      sh.fragmentShader.replace('#include <color_fragment>', [
+        '#include <color_fragment>',
+        'vec2 duv = (vWXZ + islandHalf) / islandSize;',
+        'float dep = 1.0;',
+        'if (duv.x > 0.0 && duv.x < 1.0 && duv.y > 0.0 && duv.y < 1.0) dep = texture2D(depthTex, duv).r;',
+        'vec3 shallowC = vec3(0.07, 0.42, 0.42); vec3 deepC = vec3(0.012, 0.09, 0.2);',
+        'diffuseColor.rgb = mix(shallowC, deepC, smoothstep(0.0, 0.55, dep));',
+        'float edge = 1.0 - smoothstep(0.0, 0.06, dep);',
+        'float wave = 0.5 + 0.5 * sin(time * 1.7 - dep * 110.0 + (vWXZ.x + vWXZ.y) * 0.12);',
+        'float foam = edge * (0.45 + 0.55 * wave);',
+        'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.96, 0.97), foam);',
+        'diffuseColor.a = mix(0.55, 0.94, smoothstep(0.0, 0.3, dep));',
+      ].join('\n'));
+  };
+  mat.color.setHex(0xffffff);
+  mat.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------------
+// Gelände: Felsstruktur an Hängen, großflächige Variation gegen Kachel-Muster
+// ---------------------------------------------------------------------
+function patchTerrain(mat) {
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.rockMap = { value: ROCK_TEX };
+    sh.vertexShader = 'varying float vWNy;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvWNy = normal.y;');
+    sh.fragmentShader = 'uniform sampler2D rockMap; varying float vWNy;\n' + sh.fragmentShader.replace('#include <map_fragment>', [
+      'vec4 tG = texture2D(map, vMapUv);',
+      'vec4 tR = texture2D(rockMap, vMapUv * 0.45);',
+      'float macro = 0.84 + 0.32 * texture2D(map, vMapUv * 0.043).r;',
+      'float rk = smoothstep(0.84, 0.72, vWNy);',
+      'diffuseColor.rgb *= mix(tG.rgb, tR.rgb, rk) * macro;',
+    ].join('\n'));
+  };
+  mat.needsUpdate = true;
+}
+
+// Kontaktschatten (vorberechnet) unter Bäumen, Steinen, Kisten und um Häuser
+function bakeTerrainAO() {
+  if (!terrainMesh) return;
+  const col = terrainMesh.geometry.attributes.color;
+  const darken = (i, f) => col.setXYZ(i, col.getX(i) * f, col.getY(i) * f, col.getZ(i) * f);
+  const idxAt = (x, z) => [Math.round((x + HALF) / W.cellSize), Math.round((z + HALF) / W.cellSize)];
+  for (const [x, z, r, s] of aoSpots) {
+    const [ci, cj] = idxAt(x, z), n = Math.ceil(r / W.cellSize);
+    for (let j = cj - n; j <= cj + n; j++) for (let i = ci - n; i <= ci + n; i++) {
+      if (i < 0 || j < 0 || i >= HM_N || j >= HM_N) continue;
+      const vx = i * W.cellSize - HALF, vz = j * W.cellSize - HALF;
+      const d = Math.hypot(vx - x, vz - z);
+      if (d < r) darken(j * HM_N + i, lerp(s, 1, smoothstep(0, r, d)));
+    }
+  }
+  for (const hs of houses) {
+    const m = 3.5;
+    const [i0, j0] = idxAt(hs.x - hs.w / 2 - m, hs.z - hs.d / 2 - m), [i1, j1] = idxAt(hs.x + hs.w / 2 + m, hs.z + hs.d / 2 + m);
+    for (let j = Math.max(0, j0); j <= Math.min(HM_N - 1, j1); j++) for (let i = Math.max(0, i0); i <= Math.min(HM_N - 1, i1); i++) {
+      const vx = i * W.cellSize - HALF, vz = j * W.cellSize - HALF;
+      const dx = Math.max(0, Math.abs(vx - hs.x) - hs.w / 2), dz = Math.max(0, Math.abs(vz - hs.z) - hs.d / 2);
+      darken(j * HM_N + i, lerp(0.62, 1, smoothstep(0, m, Math.hypot(dx, dz))));
+    }
+  }
+  col.needsUpdate = true;
 }
 
 // ===== 40-build.js =====
@@ -2982,6 +3197,8 @@ const EYE_COLORS = [0x3b2a1a, 0x2f6fd6, 0x3f8f3a, 0x5a4632];
 const SHAPE = {
   box: new THREE.BoxGeometry(1, 1, 1, 1, 1, 1).toNonIndexed(),
   sph: new THREE.SphereGeometry(0.5, 16, 12).toNonIndexed(),
+  sphS: new THREE.SphereGeometry(0.5, 8, 6).toNonIndexed(),
+  ico: new THREE.IcosahedronGeometry(0.5, 1),
   cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 14).toNonIndexed(),
   cone: new THREE.ConeGeometry(0.5, 1, 10).toNonIndexed(),
 };
@@ -2989,7 +3206,7 @@ const capCache = new Map();
 function capsuleShape(r, len) {
   const k = r.toFixed(3) + '|' + len.toFixed(3);
   let g = capCache.get(k);
-  if (!g) { g = new THREE.CapsuleGeometry(r, len, 5, 12).toNonIndexed(); capCache.set(k, g); }
+  if (!g) { g = (r < 0.03 ? new THREE.CapsuleGeometry(r, len, 2, 6) : new THREE.CapsuleGeometry(r, len, 4, 10)).toNonIndexed(); capCache.set(k, g); }
   return g;
 }
 
@@ -2998,7 +3215,9 @@ const _cm = new THREE.Matrix4(), _cq = new THREE.Quaternion(), _ce = new THREE.E
 function mergeParts(list) {
   const pos = [], nor = [], col = [];
   for (const p of list) {
-    const src = p.s === 'cap' ? capsuleShape(p.r, p.len) : SHAPE[p.s];
+    // kleine Kugeln (Augen, Lippen, …) automatisch gröber auflösen
+    const small = p.s === 'sph' && Math.max(p.sx || 1, p.sy || 1, p.sz || 1) < 0.09;
+    const src = p.s === 'cap' ? capsuleShape(p.r, p.len) : SHAPE[small ? 'sphS' : p.s];
     _ce.set(p.rx || 0, p.ry || 0, p.rz || 0);
     _cq.setFromEuler(_ce);
     _cm.compose(_cp.set(p.x || 0, p.y || 0, p.z || 0), _cq, _cs.set(p.sx || 1, p.sy || 1, p.sz || 1));
@@ -3063,6 +3282,11 @@ function characterGeometries(o) {
     { s: 'cyl', x: 0.1, y: 0.36, z: -0.128, rx: Math.PI / 2, sx: 0.08, sy: 0.012, sz: 0.08, c: o.accent },
     { s: 'cyl', y: 0.55, sx: 0.2, sy: 0.06, sz: 0.17, c: shirtD },
     { s: 'cyl', y: 0.6, sx: 0.1, sy: 0.14, sz: 0.1, c: skinD },
+    // Kapuze im Nacken, Brusttaschen, Saum
+    { s: 'sph', y: 0.53, z: 0.1, sx: 0.32, sy: 0.14, sz: 0.2, c: shirtD },
+    { s: 'box', x: -0.1, y: 0.12, z: -0.118, sx: 0.12, sy: 0.08, sz: 0.02, c: shirtD },
+    { s: 'box', x: 0.1, y: 0.12, z: -0.118, sx: 0.12, sy: 0.08, sz: 0.02, c: shirtD },
+    { s: 'cyl', y: -0.04, sx: 0.37, sy: 0.04, sz: 0.25, c: shirtD },
     // Rucksack mit Tasche und Gurten
     { s: 'box', y: 0.3, z: 0.2, sx: 0.34, sy: 0.4, sz: 0.14, c: o.pack },
     { s: 'sph', y: 0.49, z: 0.2, sx: 0.34, sy: 0.08, sz: 0.14, c: o.pack },
@@ -3082,11 +3306,26 @@ function characterGeometries(o) {
     { s: 'sph', x: 0.05, y: 0.169, z: -0.117, sx: 0.026, sy: 0.03, sz: 0.012, c: o.eyes },
     { s: 'box', x: -0.05, y: 0.205, z: -0.113, rz: 0.12, sx: 0.056, sy: 0.013, sz: 0.012, c: shade(hair, 0.8) },
     { s: 'box', x: 0.05, y: 0.205, z: -0.113, rz: -0.12, sx: 0.056, sy: 0.013, sz: 0.012, c: shade(hair, 0.8) },
-    { s: 'sph', y: 0.13, z: -0.122, sx: 0.034, sy: 0.05, sz: 0.04, c: skinD },
-    { s: 'box', y: 0.085, z: -0.112, sx: 0.06, sy: 0.012, sz: 0.01, c: 0x8a3b3b },
+    { s: 'sph', x: -0.05, y: 0.169, z: -0.124, sx: 0.013, sy: 0.015, sz: 0.006, c: 0x0c0c10 },
+    { s: 'sph', x: 0.05, y: 0.169, z: -0.124, sx: 0.013, sy: 0.015, sz: 0.006, c: 0x0c0c10 },
+    { s: 'sph', x: -0.043, y: 0.177, z: -0.127, sx: 0.008, sy: 0.008, sz: 0.004, c: 0xffffff },
+    { s: 'sph', x: 0.057, y: 0.177, z: -0.127, sx: 0.008, sy: 0.008, sz: 0.004, c: 0xffffff },
+    { s: 'sph', x: -0.05, y: 0.186, z: -0.103, sx: 0.06, sy: 0.022, sz: 0.03, c: skinD },
+    { s: 'sph', x: 0.05, y: 0.186, z: -0.103, sx: 0.06, sy: 0.022, sz: 0.03, c: skinD },
+    { s: 'box', y: 0.15, z: -0.118, sx: 0.022, sy: 0.05, sz: 0.02, c: skin },
+    { s: 'sph', y: 0.128, z: -0.125, sx: 0.038, sy: 0.034, sz: 0.036, c: skinD },
+    { s: 'sph', x: -0.078, y: 0.115, z: -0.088, sx: 0.045, sy: 0.03, sz: 0.02, c: shade(0xe0806a, 1.0) },
+    { s: 'sph', x: 0.078, y: 0.115, z: -0.088, sx: 0.045, sy: 0.03, sz: 0.02, c: shade(0xe0806a, 1.0) },
+    { s: 'sph', y: 0.089, z: -0.112, sx: 0.055, sy: 0.014, sz: 0.018, c: 0xb4605a },
+    { s: 'sph', y: 0.078, z: -0.11, sx: 0.05, sy: 0.016, sz: 0.018, c: 0xc4706a },
+    { s: 'sph', y: 0.04, z: -0.075, sx: 0.07, sy: 0.04, sz: 0.05, c: skin },
   ];
   const cap = { s: 'sph', y: 0.235, z: 0.01, sx: 0.262, sy: 0.2, sz: 0.272, c: hair };
   const back = { s: 'sph', y: 0.16, z: 0.05, sx: 0.25, sy: 0.22, sz: 0.2, c: hair };
+  if (o.hairStyle !== 'muetze') {
+    head.push({ s: 'sph', y: 0.245, z: -0.085, rx: 0.4, sx: 0.23, sy: 0.08, sz: 0.1, c: hair });
+    head.push({ s: 'box', x: -0.117, y: 0.16, z: -0.03, sx: 0.02, sy: 0.07, sz: 0.04, c: hair }, { s: 'box', x: 0.117, y: 0.16, z: -0.03, sx: 0.02, sy: 0.07, sz: 0.04, c: hair });
+  }
   if (o.hairStyle === 'muetze') {
     head.push({ s: 'sph', y: 0.245, sx: 0.27, sy: 0.22, sz: 0.28, c: o.accent }, { s: 'cyl', y: 0.2, sx: 0.272, sy: 0.05, sz: 0.282, c: shade(o.accent, 0.75) }, { s: 'sph', y: 0.37, sx: 0.07, sy: 0.07, sz: 0.07, c: 0xffffff });
   } else {
@@ -3111,8 +3350,14 @@ function characterGeometries(o) {
   const foreArm = [
     { s: 'cap', r: 0.053, len: 0.14, y: -0.11, c: o.longSleeve ? shirt : skin },
     { s: 'cyl', y: -0.2, sx: 0.115, sy: 0.035, sz: 0.115, c: o.longSleeve ? o.accent : shirtD },
-    { s: 'sph', y: -0.28, sx: 0.1, sy: 0.12, sz: 0.085, c: glove },
-    { s: 'sph', y: -0.26, z: -0.045, sx: 0.04, sy: 0.07, sz: 0.04, c: glove },
+    { s: 'sph', y: -0.27, sx: 0.095, sy: 0.1, sz: 0.06, c: glove },
+    // vier Finger (leicht gekrümmt) und Daumen
+    { s: 'cap', r: 0.013, len: 0.045, x: -0.03, y: -0.335, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.014, len: 0.052, x: -0.01, y: -0.34, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.014, len: 0.05, x: 0.01, y: -0.338, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.012, len: 0.04, x: 0.03, y: -0.33, z: -0.006, rx: 0.35, c: glove },
+    { s: 'cap', r: 0.015, len: 0.04, y: -0.27, z: -0.045, rx: 0.9, c: glove },
+    { s: 'box', y: -0.225, sx: 0.1, sy: 0.02, sz: 0.07, c: o.gloves ? 0x3a3f4a : skinD },
   ];
   // Oberschenkel (Hüftgelenk-Raum)
   const thigh = [
@@ -3122,12 +3367,21 @@ function characterGeometries(o) {
   // Unterschenkel + Schuh (Knie-Raum)
   const shin = [
     { s: 'sph', y: 0.0, sx: 0.15, sy: 0.14, sz: 0.15, c: pantsD },
-    { s: 'cap', r: 0.072, len: 0.24, y: -0.19, c: pants },
-    { s: 'sph', y: -0.4, z: -0.055, sx: 0.13, sy: 0.11, sz: 0.27, c: shoe },
-    { s: 'box', y: -0.445, z: -0.055, sx: 0.125, sy: 0.03, sz: 0.26, c: sole },
-    { s: 'box', y: -0.37, z: -0.12, sx: 0.06, sy: 0.02, sz: 0.1, c: 0xffffff },
+    { s: 'sph', y: -0.03, z: -0.06, sx: 0.12, sy: 0.12, sz: 0.06, c: shade(o.accent, 0.55) },
+    { s: 'cap', r: 0.072, len: 0.22, y: -0.18, c: pants },
+    { s: 'cyl', y: -0.33, sx: 0.15, sy: 0.05, sz: 0.15, c: pantsD },
   ];
-  set = { pelvis: mergeParts(pelvis), chest: mergeParts(chest), head: mergeParts(head), upperArm: mergeParts(upperArm), foreArm: mergeParts(foreArm), thigh: mergeParts(thigh), shin: mergeParts(shin) };
+  // Fuß/Schuh (Sprunggelenk-Raum)
+  const foot = [
+    { s: 'sph', y: -0.035, z: -0.055, sx: 0.13, sy: 0.1, sz: 0.27, c: shoe },
+    { s: 'sph', y: -0.01, z: 0.03, sx: 0.12, sy: 0.12, sz: 0.12, c: shoe },
+    { s: 'box', y: -0.082, z: -0.055, sx: 0.126, sy: 0.03, sz: 0.265, c: sole },
+    { s: 'box', y: 0.0, z: -0.1, rx: -0.25, sx: 0.07, sy: 0.015, sz: 0.1, c: 0xffffff },
+    { s: 'box', y: 0.006, z: -0.075, rx: -0.25, sx: 0.07, sy: 0.012, sz: 0.012, c: 0xffffff },
+    { s: 'box', y: 0.012, z: -0.125, rx: -0.25, sx: 0.07, sy: 0.012, sz: 0.012, c: 0xffffff },
+    { s: 'box', y: -0.04, z: -0.19, sx: 0.12, sy: 0.05, sz: 0.02, c: o.accent },
+  ];
+  set = { pelvis: mergeParts(pelvis), chest: mergeParts(chest), head: mergeParts(head), upperArm: mergeParts(upperArm), foreArm: mergeParts(foreArm), thigh: mergeParts(thigh), shin: mergeParts(shin), foot: mergeParts(foot) };
   charGeoCache.set(key, set);
   return set;
 }
@@ -3150,6 +3404,8 @@ function createCharacterMesh(outfitIn) {
   const hipR = joint(pelvis, 0.1, -0.04, 0); mesh(hipR, G.thigh);
   const knL = joint(hipL, 0, -0.42, 0); mesh(knL, G.shin);
   const knR = joint(hipR, 0, -0.42, 0); mesh(knR, G.shin);
+  const anL = joint(knL, 0, -0.36, 0); mesh(anL, G.foot);
+  const anR = joint(knR, 0, -0.36, 0); mesh(anR, G.foot);
   // Gleiter
   const glider = new THREE.Group();
   const canopy = new THREE.Mesh(gliderGeo, new THREE.MeshStandardMaterial({ color: o.shirt, side: THREE.DoubleSide, roughness: 0.5 }));
@@ -3165,19 +3421,19 @@ function createCharacterMesh(outfitIn) {
   }
   glider.visible = false;
   g.add(glider);
-  return { group: g, pelvis, spine, neck, shL, shR, elL, elR, hand, hipL, hipR, knL, knR, glider, held: null, heldKey: '', cur: {}, tgt: {} };
+  return { group: g, pelvis, spine, neck, shL, shR, elL, elR, hand, hipL, hipR, knL, knR, anL, anR, glider, held: null, heldKey: '', cur: {}, tgt: {} };
 }
 
 // ---------------------------------------------------------------------
 // Animation: Zielpose pro Zustand, Gelenke blenden weich (~0,15 s)
 // ---------------------------------------------------------------------
-const POSE_KEYS = ['pelvisY', 'pelvisX', 'spineX', 'spineY', 'neckX', 'neckY', 'shLX', 'shLZ', 'elL', 'shRX', 'shRZ', 'elR', 'hipLX', 'hipRX', 'knL', 'knR'];
+const POSE_KEYS = ['pelvisY', 'pelvisX', 'spineX', 'spineY', 'neckX', 'neckY', 'shLX', 'shLZ', 'elL', 'shRX', 'shRZ', 'elR', 'hipLX', 'hipRX', 'knL', 'knR', 'anL', 'anR'];
 
 function computePose(T, P) {
   const W0 = CONFIG.player.walkSpeed;
   T.pelvisY = 0.92; T.pelvisX = 0; T.spineX = 0; T.spineY = 0; T.neckX = 0; T.neckY = 0;
   T.shLX = 0.05; T.shLZ = -0.12; T.elL = 0.18; T.shRX = 0.05; T.shRZ = 0.12; T.elR = 0.18;
-  T.hipLX = 0; T.hipRX = 0; T.knL = 0; T.knR = 0;
+  T.hipLX = 0; T.hipRX = 0; T.knL = 0; T.knR = 0; T.anL = 0; T.anR = 0;
   const t = P.time;
   if (P.state === 'dead') {
     const k = Math.min(1, P.deadT / 0.6);
@@ -3188,7 +3444,7 @@ function computePose(T, P) {
   if (P.state === 'freefall') {
     T.pelvisX = -1.35; T.pelvisY = 1.05; T.neckX = 1.05;
     T.shLX = 0.25; T.shLZ = -1.35 + Math.sin(t * 7) * 0.05; T.shRX = 0.25; T.shRZ = 1.35 - Math.sin(t * 7) * 0.05; T.elL = 0.5; T.elR = 0.5;
-    T.hipLX = 0.15; T.hipRX = 0.05; T.knL = -0.6; T.knR = -0.4;
+    T.hipLX = 0.15; T.hipRX = 0.05; T.knL = -0.6; T.knR = -0.4; T.anL = 0.6; T.anR = 0.6;
     return;
   }
   if (P.state === 'glide') {
@@ -3218,6 +3474,10 @@ function computePose(T, P) {
   if (P.crouch && !P.air) {
     T.pelvisY -= 0.44; T.hipLX += 1.3; T.hipRX += 1.3; T.knL -= 2.0; T.knR -= 2.0; T.spineX -= 0.3; T.neckX += 0.25;
   }
+  // Sprunggelenke: Fuß flach zum Boden (Becken-Neigung mit eingerechnet)
+  const flat = P.air ? 0.45 : 1;
+  T.anL = -(T.hipLX + T.knL + T.pelvisX) * flat + (P.air ? 0.35 : 0);
+  T.anR = -(T.hipRX + T.knR + T.pelvisX) * flat + (P.air ? 0.35 : 0);
   // Oberkörper je nach Aktion
   const pitch = P.pitch || 0;
   if (P.action === 'aim') {
@@ -3248,6 +3508,7 @@ function applyPose(m, P, dt) {
   m.elL.rotation.x = C.elL; m.elR.rotation.x = C.elR;
   m.hipL.rotation.x = C.hipLX; m.hipR.rotation.x = C.hipRX;
   m.knL.rotation.x = C.knL; m.knR.rotation.x = C.knR;
+  m.anL.rotation.x = C.anL; m.anR.rotation.x = C.anR;
 }
 
 const _pose = { state: 'ground', speed: 0, phase: 0, air: false, crouch: false, action: 'pickaxe', pitch: 0, recoil: 0, swingT: 0, time: 0, deadT: 0, instant: false };
@@ -5210,8 +5471,8 @@ function renderLobby(dt) {
   animateLobbyCharacter(m, lobby.t, dt);
   lobby.ring.material.opacity = 0.6 + Math.sin(lobby.t * 3) * 0.3;
   // Figur rechts im Bild, Einstellungen links
-  camera.position.set(LOBBY_POS.x - 0.95, LOBBY_POS.y + 1.35, LOBBY_POS.z + 2.9);
-  camera.lookAt(LOBBY_POS.x - 1.15, LOBBY_POS.y + 1.02, LOBBY_POS.z);
+  camera.position.set(LOBBY_POS.x - 0.8, LOBBY_POS.y + 1.4, LOBBY_POS.z + 2.35);
+  camera.lookAt(LOBBY_POS.x - 0.98, LOBBY_POS.y + 1.08, LOBBY_POS.z);
   if (Math.abs(camera.fov - CONFIG.render.fov) > 0.01) { camera.fov = CONFIG.render.fov; camera.updateProjectionMatrix(); }
   sky.position.copy(camera.position);
   sun.position.set(LOBBY_POS.x + SUN_DIR.x * 50, LOBBY_POS.y + SUN_DIR.y * 50, LOBBY_POS.z + SUN_DIR.z * 50);
@@ -5739,6 +6000,7 @@ window.__game = {
   makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
   get player() { return player; }, get state() { return gameState; }, collapseQueue, lobby,
   fx: { explosion, applyTimeOfDay, setTodMode, barrels, damageBarrel },
+  dbg: { renderer, renderFrame, post, grass: grassField, get gl() { return renderer.getContext(); } },
   startNow: () => { $('lobby').classList.add('hidden'); startGame(); },
 };
 

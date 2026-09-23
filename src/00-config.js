@@ -20,7 +20,7 @@ const CONFIG = {
     shadowArea: 60, visibleActorDistance: 320, visibleItemDistance: 90,
     quality: {
       niedrig: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, grass: 0, post: false },
-      mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 1024, grass: 1, post: true },
+      mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
       hoch:    { pixelRatio: 1.5,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
     },
     defaultQuality: 'mittel',

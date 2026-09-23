@@ -79,12 +79,15 @@ function buildTerrainMesh() {
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
   scene.add(mesh);
+  terrainMesh = mesh;
+  patchTerrain(mesh.material);
 
   waterMesh = new THREE.Mesh(new THREE.PlaneGeometry(W.size * 3, W.size * 3),
     new THREE.MeshStandardMaterial({ color: 0x14597f, roughness: 0.08, metalness: 0.1, normalMap: waterNormal, normalScale: new THREE.Vector2(0.45, 0.45), transparent: true, opacity: 0.9, envMapIntensity: 1.1 }));
   waterMesh.rotation.x = -Math.PI / 2;
   waterMesh.position.y = W.waterLevel;
   waterMesh.receiveShadow = true;
+  patchWater(waterMesh.material);
   scene.add(waterMesh);
 }
 
@@ -193,11 +196,10 @@ function populateNature(rnd) {
 
   // Bäume: Nadelbäume (zwei Kegel) und Laubbäume (Kugel-Krone)
   const trunkGeo = new THREE.CylinderGeometry(0.2, 0.34, 1, 7);
-  const coneGeo = new THREE.ConeGeometry(1, 1, 8);
   const blobGeo = new THREE.IcosahedronGeometry(1, 1);
   const trunks = new THREE.InstancedMesh(trunkGeo, texMat('bark', 0xffffff), W.trees);
-  const cones = new THREE.InstancedMesh(coneGeo, flat(), W.trees * 2);
-  const blobs = new THREE.InstancedMesh(blobGeo, flat(), W.trees);
+  const cones = new THREE.InstancedMesh(pineCrownGeometry(), windify(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.035), W.trees);
+  const blobs = new THREE.InstancedMesh(broadCrownGeometry(), windify(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.05), W.trees);
   let tc = 0, cc = 0, bc = 0;
   for (let t = 0; t < W.trees * 6 && tc < W.trees; t++) {
     const x = (rnd() * 2 - 1) * HALF * 0.9, z = (rnd() * 2 - 1) * HALF * 0.9;
@@ -209,21 +211,23 @@ function populateNature(rnd) {
     m.compose(p, q, s); trunks.setMatrixAt(tc, m);
     let topY;
     if (pine) {
-      const r = 1.9 + rnd() * 1.1, hh = 4 + rnd() * 2.5;
-      col.setHSL(0.33 + rnd() * 0.05, 0.45 + rnd() * 0.15, 0.24 + rnd() * 0.08);
-      p.set(x, g + th + hh / 2 - 0.8, z); s.set(r, hh, r); m.compose(p, q, s); cones.setMatrixAt(cc, m); cones.setColorAt(cc++, col);
-      p.set(x, g + th + hh - 0.6, z); s.set(r * 0.7, hh * 0.75, r * 0.7); m.compose(p, q, s); cones.setMatrixAt(cc, m); cones.setColorAt(cc++, col);
-      topY = g + th + hh * 1.3;
+      const r = 2.1 + rnd() * 1.2, hh = 6 + rnd() * 3.5;
+      col.setHSL(0.34 + rnd() * 0.05, 0.42 + rnd() * 0.15, 0.2 + rnd() * 0.07);
+      e.set(0, rnd() * Math.PI * 2, 0); q.setFromEuler(e);
+      p.set(x, g + th - 0.9, z); s.set(r, hh, r); m.compose(p, q, s); cones.setMatrixAt(cc, m); cones.setColorAt(cc++, col);
+      q.identity();
+      topY = g + th + hh;
     } else {
       const r = 2 + rnd() * 1.3;
       col.setHSL(0.22 + rnd() * 0.1, 0.5 + rnd() * 0.2, 0.33 + rnd() * 0.1);
       e.set(rnd(), rnd() * 3, rnd()); q.setFromEuler(e);
-      p.set(x, g + th + r * 0.6, z); s.set(r, r * 0.85, r); m.compose(p, q, s); blobs.setMatrixAt(bc, m); blobs.setColorAt(bc++, col);
+      p.set(x, g + th - r * 0.35, z); s.set(r * 1.3, r * 1.2, r * 1.3); m.compose(p, q, s); blobs.setMatrixAt(bc, m); blobs.setColorAt(bc++, col);
       q.identity();
       topY = g + th + r * 1.4;
     }
     const c = addCollider([x - 0.3, g - 0.5, z - 0.3, x + 0.3, topY, z + 0.3], false);
     c.material = 'tree';
+    aoSpots.push([x, z, 3.2, 0.55]);
     tc++;
   }
   trunks.count = tc; cones.count = cc; blobs.count = bc;
@@ -243,6 +247,7 @@ function populateNature(rnd) {
     const r = sc * 0.8;
     const c = addCollider([x - r, g - 1, z - r, x + r, g + sc * 0.35 + sc * 0.7, z + r], false);
     c.material = 'rock';
+    aoSpots.push([x, z, r * 1.7, 0.6]);
     if (rnd() < 0.18) lootSpawns.chests.push({ x: x + r + 1.2, y: getHeight(x + r + 1.2, z), z, yaw: -Math.PI / 2, outdoor: true });
     rc++;
   }
@@ -305,6 +310,7 @@ function populateNature(rnd) {
     const g = getHeight(x, z);
     const c = addStaticBox(x - 0.75, g - 0.4, z - 0.75, x + 0.75, g + 1.5, z + 0.75, texMat('wood', 0xc79a6a), false);
     c.material = 'crate';
+    aoSpots.push([x, z, 1.8, 0.55]);
     crates++;
   }
 
@@ -318,31 +324,6 @@ function populateNature(rnd) {
   }
 }
 
-function buildClouds(rnd) {
-  cloudGroup = new THREE.Group();
-  const geo = new THREE.IcosahedronGeometry(1, 1);
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x8899aa, flatShading: true, fog: false });
-  const perCloud = 6;
-  const im = new THREE.InstancedMesh(geo, mat, W.clouds * perCloud);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  let i = 0;
-  for (let c = 0; c < W.clouds; c++) {
-    const ang = rnd() * Math.PI * 2, dist = 120 + rnd() * 520;
-    const cx = Math.cos(ang) * dist, cz = Math.sin(ang) * dist, cy = 270 + rnd() * 60;
-    const size = 10 + rnd() * 14;
-    for (let k = 0; k < perCloud; k++) {
-      p.set(cx + (rnd() - 0.5) * size * 2.2, cy + (rnd() - 0.3) * size * 0.4, cz + (rnd() - 0.5) * size);
-      const r = size * (0.5 + rnd() * 0.6);
-      s.set(r, r * 0.55, r * 0.8);
-      m.compose(p, q, s); im.setMatrixAt(i++, m);
-    }
-  }
-  im.instanceMatrix.needsUpdate = true;
-  im.frustumCulled = false;
-  cloudGroup.add(im);
-  scene.add(cloudGroup);
-}
-
 function buildWorld() {
   generateHeights();
   const rnd = mulberry32(W.seed ^ 0x5bd1e995);
@@ -350,7 +331,8 @@ function buildWorld() {
   buildTerrainMesh();
   for (const h of houses) buildHouse(h);
   populateNature(rnd);
-  buildClouds(rnd);
+  buildSoftClouds(rnd);
+  bakeTerrainAO();
   spawnBarrels(rnd);
   // Truhen draußen auffüllen, falls die Steine zu wenige geliefert haben
   for (let t = 0; t < 400 && lootSpawns.chests.filter((c) => c.outdoor).length < CONFIG.loot.chestsOutdoor; t++) {

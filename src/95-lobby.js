@@ -70,8 +70,8 @@ function renderLobby(dt) {
   animateLobbyCharacter(m, lobby.t, dt);
   lobby.ring.material.opacity = 0.6 + Math.sin(lobby.t * 3) * 0.3;
   // Figur rechts im Bild, Einstellungen links
-  camera.position.set(LOBBY_POS.x - 0.95, LOBBY_POS.y + 1.35, LOBBY_POS.z + 2.9);
-  camera.lookAt(LOBBY_POS.x - 1.15, LOBBY_POS.y + 1.02, LOBBY_POS.z);
+  camera.position.set(LOBBY_POS.x - 0.8, LOBBY_POS.y + 1.4, LOBBY_POS.z + 2.35);
+  camera.lookAt(LOBBY_POS.x - 0.98, LOBBY_POS.y + 1.08, LOBBY_POS.z);
   if (Math.abs(camera.fov - CONFIG.render.fov) > 0.01) { camera.fov = CONFIG.render.fov; camera.updateProjectionMatrix(); }
   sky.position.copy(camera.position);
   sun.position.set(LOBBY_POS.x + SUN_DIR.x * 50, LOBBY_POS.y + SUN_DIR.y * 50, LOBBY_POS.z + SUN_DIR.z * 50);
