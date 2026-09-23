@@ -3,19 +3,18 @@
 Ein Battle-Royale-Bauspiel im Browser. **Das ganze Spiel steckt in einer einzigen Datei: `index.html`.**
 Three.js ist direkt eingebettet, es wird nichts aus dem Internet nachgeladen.
 
-## Stand: Phase 1 – Engine-Grundlage
+## Was drin ist
 
-- Insel mit Hügeln, Strand, dem See „Nebelsee“, 14 Häusern mit Tür und Fenster, Bäumen, Steinen und Kisten
-- Laufen, Sprinten, Ducken, Springen, Schulterkamera mit Kollision
-- Bauen: Wand, Boden, Rampe und Dach auf einem 5-m-Raster; Einsturz mit Kettenreaktion
-- Spitzhacke gegen Bauteile und Trainingspuppen, mit Kopf- und Körpertreffern
-- Technik nach Abschnitt 1b:
-  - eigene Kollision (Kapsel gegen AABB, Substeps ≤ 0,2 m)
-  - Spatial Hash Grid mit 8-m-Zellen
-  - 3D-DDA-Raycasts mit Slab-Test, Terrain-Raycast mit Binärsuche
-  - fester 60-Hz-Tick mit Interpolation
-  - Object Pooling
-  - F3-Debug-Anzeige
+- **Battle Bus:** fliegt quer über die Insel, Absprung, freier Fall (Sturzflug möglich), Gleiter geht automatisch auf
+- **24 Bots** mit drei Stärken: looten Truhen und Waffen, kämpfen auf passender Entfernung, weichen seitlich aus, bauen Wände wenn sie beschossen werden, heilen sich und laufen vor dem Sturm davon
+- **Truhen** (goldenes Leuchten und Funkeln) und **Bodenloot** mit Lichtstrahl in der Seltenheitsfarbe
+- **5 Waffen** in 5 Seltenheiten (Grau, Grün, Blau, Lila, Gold): Pistole, Maschinenpistole, Sturmgewehr, Schrotflinte, Scharfschützengewehr mit Zielfernrohr; Kopftreffer, Nachladen, Munitionsarten
+- **Heilung:** Verband, Medikit, kleiner Schildtrank, Schildtrank; Leben + Schild
+- **Sturm** in 5 Phasen mit Countdown, Schaden außerhalb, Minikarte und große Karte (M)
+- **Bauen** mit Holz (Spitzhacke an Bäumen, Steinen, Kisten), Einsturz mit Kettenreaktion
+- Killfeed, Trefferanzeige, Schadenszahlen, Fallschaden, Victory Royale / Platzierung
+- **Grafik:** Himmel mit Sonne, Wolken, Wasser mit Wellen, weiche Schatten, Texturen, zwei Baumarten, Gras und Blumen
+- Technik nach Abschnitt 1b: eigene Kollision und Raycasts (Three.js nur zum Rendern), Spatial Grid, fester 60-Hz-Tick mit Interpolation, Object Pooling, F3-Debug
 - **Touch-Steuerung fürs iPad**, dazu Tastatur und Maus
 
 ## Auf dem iPad spielen
@@ -57,21 +56,24 @@ Auf Mac und PC reicht ein Doppelklick auf `index.html`.
 |---|---|---|
 | linke Bildschirmhälfte ziehen | WASD | Laufen (Joystick ganz raus = Sprinten) |
 | rechte Hälfte wischen | Maus | Umsehen |
-| Sprung | Leertaste | Springen |
-| Ducken | C (umschalten) / Strg (halten) | Ducken |
-| Bauen / Kampf | Q | Bau-Modus an/aus |
-| Wand / Boden / Rampe / Dach | 1–4, Mausrad | Bauteil wählen |
-| großer Knopf (halten) | Linksklick (halten) | Bauen bzw. Spitzhacke |
-| F3 | F3 | Debug-Anzeige |
-| ☰ | Esc / P | Pause und Einstellungen |
+| Feuer (beim Halten ziehen = zielen) | Linksklick | Schießen / Spitzhacke / Heilung benutzen |
+| Zielen | Rechtsklick | Über Kimme bzw. Zielfernrohr zielen |
+| Sprung | Leertaste | Springen, aus dem Bus springen, Gleiter öffnen |
+| Aufheben | E | Truhe öffnen, Gegenstand aufheben/tauschen |
+| Hotbar antippen | 1–5, Mausrad, F | Waffe/Heilung wählen, F = Spitzhacke |
+| Nachladen | R | Nachladen |
+| Bauen, dann Wand/Boden/Rampe/Dach | Q, dann 1–4 | Bauen (10 Holz pro Teil) |
+| Ducken | C / Strg | Ducken |
+| Minikarte antippen | M | Große Karte |
+| F3 / ☰ | F3 / Esc | Debug / Pause |
 
-Ruckelt es, im Pause-Menü **Grafik → Niedrig** wählen.
+Ruckelt es, im Pause-Menü **Grafik → Niedrig** wählen (ohne Schatten und Gras).
 
 ## Entwicklung
 
-- `src/game.js` – Spielcode; alle Werte stehen im `CONFIG`-Objekt ganz oben
+- `src/00-config.js` … `src/99-main.js` – Spielcode in Modulen; alle Werte stehen im `CONFIG`-Objekt in `00-config.js`
 - `src/template.html` – HTML, CSS, HUD und Menüs
 - `vendor/three.min.js` – Three.js r160 (MIT-Lizenz, siehe `vendor/THREE-LICENSE`)
-- `node build.mjs` – baut daraus `index.html` sowie die App-Icons
+- `node build.mjs` – packt alles in **eine** `index.html` und erzeugt die App-Icons
 
 Nach jeder Änderung an `src/` einmal `node build.mjs` ausführen.

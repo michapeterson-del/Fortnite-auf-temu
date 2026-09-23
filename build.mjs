@@ -1,13 +1,17 @@
 // Baut index.html: eine einzige Datei mit Three.js und Spielcode eingebettet.
 // Aufruf: node build.mjs
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
 const three = readFileSync('vendor/three.min.js', 'utf8')
   .replace(/^console\.warn\([^\n]*\),\n/, 'void 0,\n'); // Deprecation-Hinweis entfernen, Komma-Ausdruck behalten
-const game = readFileSync('src/game.js', 'utf8');
+// Alle Module aus src/ in fester Reihenfolge (Dateiname) in EINE Funktion packen
+const modules = readdirSync('src').filter((f) => f.endsWith('.js')).sort();
+const game = "(function () {\n'use strict';\n" +
+  modules.map((f) => '// ===== ' + f + ' =====\n' + readFileSync('src/' + f, 'utf8')).join('\n') +
+  '\n})();\n';
 const tpl = readFileSync('src/template.html', 'utf8');
-if (game.includes('</script')) throw new Error('game.js darf kein </script enthalten');
+if (game.includes('</script')) throw new Error('Spielcode darf kein </script enthalten');
 const html = tpl
   .replace('/*THREE_JS*/', () => three)
   .replace('/*GAME_JS*/', () => game);
@@ -53,4 +57,4 @@ const icon = (u, v) => {
   return [Math.round(40 + 120 * t), Math.round(90 + 110 * t), Math.round(190 + 50 * t)];
 };
 for (const s of [180, 512]) writeFileSync(`icon-${s}.png`, png(s, icon));
-console.log(`index.html gebaut: ${(html.length / 1024).toFixed(0)} KB`);
+console.log(`index.html gebaut aus ${modules.length} Modulen: ${(html.length / 1024).toFixed(0)} KB`);
