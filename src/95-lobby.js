@@ -18,7 +18,7 @@ const DIFF_HINTS = {
 const LOBBY_POS = new THREE.Vector3(0, 460, 0);
 
 const lobby = {
-  difficulty: 'mittel', bots: CONFIG.match.players - 1, skin: 0, name: 'Du',
+  difficulty: 'mittel', bots: CONFIG.match.players - 1, skin: 0, name: 'Du', tod: 'dynamisch',
   stats: { games: 0, wins: 0, kills: 0 },
   stage: null, ring: null, t: 0, searching: false,
 };
@@ -26,7 +26,7 @@ try { Object.assign(lobby, JSON.parse(localStorage.getItem('fat-lobby') || '{}')
 lobby.searching = false;
 function saveLobby() {
   try {
-    localStorage.setItem('fat-lobby', JSON.stringify({ difficulty: lobby.difficulty, bots: lobby.bots, skin: lobby.skin, name: lobby.name, stats: lobby.stats }));
+    localStorage.setItem('fat-lobby', JSON.stringify({ difficulty: lobby.difficulty, bots: lobby.bots, skin: lobby.skin, name: lobby.name, tod: lobby.tod, stats: lobby.stats }));
   } catch (e) { /* ohne Speicher weiter */ }
 }
 
@@ -77,11 +77,13 @@ function renderLobby(dt) {
   sun.position.set(LOBBY_POS.x + SUN_DIR.x * 50, LOBBY_POS.y + SUN_DIR.y * 50, LOBBY_POS.z + SUN_DIR.z * 50);
   sun.target.position.copy(LOBBY_POS);
   if (cloudGroup) cloudGroup.rotation.y += dt * 0.01;
-  renderer.render(scene, camera);
+  updateGrassField(0, 0, dt);
+  renderFrame();
 }
 
 function refreshLobbyUI() {
   document.querySelectorAll('#diffSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === lobby.difficulty));
+  document.querySelectorAll('#todSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === lobby.tod));
   $('diffHint').textContent = DIFF_HINTS[lobby.difficulty];
   $('botCount').value = lobby.bots;
   $('botCountVal').textContent = lobby.bots;
@@ -94,6 +96,7 @@ function refreshLobbyUI() {
 
 function setupLobbyUI() {
   document.querySelectorAll('#diffSeg button').forEach((b) => b.addEventListener('click', () => { lobby.difficulty = b.dataset.v; saveLobby(); refreshLobbyUI(); sfx('pickup'); }));
+  document.querySelectorAll('#todSeg button').forEach((b) => b.addEventListener('click', () => { lobby.tod = b.dataset.v; setTodMode(lobby.tod); saveLobby(); refreshLobbyUI(); sfx('pickup'); }));
   $('botCount').max = CONFIG.match.players - 1;
   $('botCount').addEventListener('input', (e) => { lobby.bots = parseInt(e.target.value, 10); saveLobby(); refreshLobbyUI(); });
   const row = $('skinRow');
@@ -150,6 +153,7 @@ function applyLobbySettings() {
     a.ai.diff = dk; a.ai.aimError = d.aimError; a.ai.reaction = d.reaction; a.ai.buildChance = d.buildChance;
   }
   if (lobby.stage) lobby.stage.visible = false;
+  setTodMode(lobby.tod);
 }
 
 function recordMatchStats(victory) {

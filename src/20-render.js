@@ -7,7 +7,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = CONFIG.render.exposure;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(CONFIG.render.skyHorizon, CONFIG.render.fogNear, CONFIG.render.fogFar);
+scene.fog = new THREE.FogExp2(CONFIG.render.skyHorizon, CONFIG.render.fogDensity);
 scene.background = new THREE.Color(CONFIG.render.skyHorizon);
 const camera = new THREE.PerspectiveCamera(CONFIG.render.fov, 1, CONFIG.render.near, CONFIG.render.far);
 camera.rotation.order = 'YXZ';
@@ -47,26 +47,7 @@ const skyMat = new THREE.ShaderMaterial({
 });
 const sky = new THREE.Mesh(new THREE.SphereGeometry(950, 32, 16), skyMat);
 
-// Umgebungslicht für PBR-Materialien (Figuren, Waffen): Env-Map aus einem Himmel mit Boden
-(function buildEnvironment() {
-  const envScene = new THREE.Scene();
-  const envMat = new THREE.ShaderMaterial({
-    uniforms: { top: { value: new THREE.Color(0x3f8fe0) }, horizon: { value: new THREE.Color(0xd8ecff) }, ground: { value: new THREE.Color(0x56683f) }, sunDir: { value: SUN_DIR } },
-    vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: [
-      'uniform vec3 top; uniform vec3 horizon; uniform vec3 ground; uniform vec3 sunDir; varying vec3 vDir;',
-      'void main(){ vec3 d = normalize(vDir); float h = d.y;',
-      '  vec3 c = h > 0.0 ? mix(horizon, top, pow(h, 0.6)) : mix(horizon * 0.8, ground, min(1.0, -h * 5.0));',
-      '  float s = max(dot(d, sunDir), 0.0); c += vec3(1.0, 0.9, 0.7) * (pow(s, 64.0) * 6.0 + pow(s, 6.0) * 0.4);',
-      '  gl_FragColor = vec4(c, 1.0); }',
-    ].join('\n'),
-    side: THREE.BackSide, depthWrite: false,
-  });
-  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), envMat));
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(envScene, 0.02).texture;
-  pmrem.dispose();
-})();
+// Umgebungslicht (Env-Map) und Tageszeit: siehe 25-atmosphere.js
 sky.renderOrder = -10;
 sky.frustumCulled = false;
 scene.add(sky);

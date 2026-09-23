@@ -238,6 +238,7 @@ function destroyPart(part, cause) {
   trash.push(part.mesh);
   partCenter(part, _pc);
   spawnParticles(_pc.x, _pc.y, _pc.z, 0xc4935f, 12, 3.5);
+  dustCloud(_pc.x, _pc.y, _pc.z, 0xb8956a, 4, 2.2);
   sfxAt('break', _pc.x, _pc.y, _pc.z);
   if (cause !== 'collapse') checkCollapse(nbs);
 }

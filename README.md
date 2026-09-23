@@ -14,7 +14,8 @@ Three.js ist direkt eingebettet, es wird nichts aus dem Internet nachgeladen.
 - **Sturm** in 5 Phasen mit Countdown, Schaden außerhalb, Minikarte und große Karte (M)
 - **Bauen** mit Holz (Spitzhacke an Bäumen, Steinen, Kisten), Einsturz mit Kettenreaktion
 - Killfeed, Trefferanzeige, Schadenszahlen, Fallschaden, Victory Royale / Platzierung
-- **Grafik:** Himmel mit Sonne, Wolken, Wasser mit Wellen, weiche Schatten, Texturen, zwei Baumarten, Gras und Blumen
+- **Grafik:** Bloom und Filmlook (eigene Nachbearbeitung mit HDR und Kantenglättung), Tageszeit von Nachmittag über goldene Stunde bis Sonnenuntergang (oder fest in der Lobby), spiegelndes Wasser, Nebel, dichtes Gras mit Wind, PBR-Figuren mit Skelett-Animationen, Mündungsfeuer mit Lichtblitz, Staub bei Einschlägen
+- **Explodierende Gaskanister:** Feuerball, Rauchsäule, Druckwelle, Kamera-Wackeln, Schaden (Deckung schützt) und Kettenreaktionen
 - Technik nach Abschnitt 1b: eigene Kollision und Raycasts (Three.js nur zum Rendern), Spatial Grid, fester 60-Hz-Tick mit Interpolation, Object Pooling, F3-Debug
 - **Touch-Steuerung fürs iPad**, dazu Tastatur und Maus
 

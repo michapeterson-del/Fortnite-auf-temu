@@ -107,6 +107,7 @@ function renderDamageNumbers() {
 }
 
 function cleanupEffects() {
+  cleanupSprites();
   for (let i = activeParticles.length - 1; i >= 0; i--) {
     const p = activeParticles[i];
     if (!p.active) { p.mesh.visible = false; activeParticles.splice(i, 1); particles.release(p); }

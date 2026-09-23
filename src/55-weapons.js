@@ -252,8 +252,13 @@ function fireWeapon(a, dx, dy, dz) {
       } else if (c && c.owner && c.owner.gridBox) {
         damagePart(c.owner, w.dmg * rm * w.build * fall, ex, ey, ez, a === player);
         spawnParticles(ex, ey, ez, 0xc4935f, 3, 2.5);
+        impactFx(ex, ey, ez, 'wood');
+      } else if (c && c.owner && c.owner.barrel) {
+        damageBarrel(c.owner, w.dmg * rm * fall, a);
+        impactFx(ex, ey, ez, 'metal');
       } else {
         spawnParticles(ex, ey, ez, worldHit.terrain ? 0x7a6a4a : 0xb0b0b0, 2, 2);
+        impactFx(ex, ey, ez, worldHit.terrain ? 'terrain' : c && (c.material === 'tree' || c.material === 'crate') ? 'wood' : 'stone');
       }
     } else {
       const r = Math.min(w.range, 150);
@@ -261,7 +266,7 @@ function fireWeapon(a, dx, dy, dz) {
     }
     spawnTracer(mx, my, mz, ex, ey, ez);
   }
-  spawnParticles(mx, my, mz, 0xffd27a, 2, 1, 0, 0.08, true);
+  muzzleFlash(mx, my, mz, it.type === 'shotgun' || it.type === 'sniper');
   sfxGun(it.type, _eye.x, _eye.y, _eye.z);
   if (it.mag === 0) startReload(a);
   return true;
@@ -287,6 +292,9 @@ function swingPickaxe(a, ox, oy, oz, dx, dy, dz) {
     sfxAt('hit', hx, hy, hz);
     spawnParticles(hx, hy, hz, 0xc4935f, 5, 2.5);
     damagePart(c.owner, P.damageBuild, hx, hy, hz, a === player);
+  } else if (c && c.owner && c.owner.barrel) {
+    damageBarrel(c.owner, P.damageBuild, a);
+    sfxAt('hit', hx, hy, hz);
   } else if (c && (c.material === 'tree' || c.material === 'rock' || c.material === 'crate')) {
     const before = a.inv.mats;
     a.inv.mats = Math.min(CONFIG.build.maxMaterials, a.inv.mats + P.harvest);

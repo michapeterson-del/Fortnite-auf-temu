@@ -40,7 +40,7 @@ function buildTerrainMesh() {
   const col = new Float32Array(HM_N * HM_N * 3);
   const uv = new Float32Array(HM_N * HM_N * 2);
   const c = new THREE.Color();
-  const cSand = new THREE.Color(0xe2cf96), cGrass1 = new THREE.Color(0x6cbf4f), cGrass2 = new THREE.Color(0x3f9a3a), cGrass3 = new THREE.Color(0x9ccf55);
+  const cSand = new THREE.Color(0xe2cf96), cGrass1 = new THREE.Color(0x5e9e44), cGrass2 = new THREE.Color(0x3d7a33), cGrass3 = new THREE.Color(0x93ae4c);
   const cRock = new THREE.Color(0x8a8175), cSnow = new THREE.Color(0xf0f4f5), cSea = new THREE.Color(0xb7a878), cDirt = new THREE.Color(0xa3906c);
   const nrm = { x: 0, y: 1, z: 0 };
   for (let j = 0; j < HM_N; j++) {
@@ -81,7 +81,7 @@ function buildTerrainMesh() {
   scene.add(mesh);
 
   waterMesh = new THREE.Mesh(new THREE.PlaneGeometry(W.size * 3, W.size * 3),
-    new THREE.MeshPhongMaterial({ color: 0x1f86c9, specular: 0xbfe6ff, shininess: 90, normalMap: waterNormal, normalScale: new THREE.Vector2(0.55, 0.55), transparent: true, opacity: 0.84 }));
+    new THREE.MeshStandardMaterial({ color: 0x14597f, roughness: 0.08, metalness: 0.1, normalMap: waterNormal, normalScale: new THREE.Vector2(0.45, 0.45), transparent: true, opacity: 0.9, envMapIntensity: 1.1 }));
   waterMesh.rotation.x = -Math.PI / 2;
   waterMesh.position.y = W.waterLevel;
   waterMesh.receiveShadow = true;
@@ -351,6 +351,7 @@ function buildWorld() {
   for (const h of houses) buildHouse(h);
   populateNature(rnd);
   buildClouds(rnd);
+  spawnBarrels(rnd);
   // Truhen draußen auffüllen, falls die Steine zu wenige geliefert haben
   for (let t = 0; t < 400 && lootSpawns.chests.filter((c) => c.outdoor).length < CONFIG.loot.chestsOutdoor; t++) {
     const x = (rnd() * 2 - 1) * HALF * 0.75, z = (rnd() * 2 - 1) * HALF * 0.75;

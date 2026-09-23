@@ -15,13 +15,13 @@ const CONFIG = {
   maxFrameTime: 0.25,
   render: {
     fov: 72, adsFov: 52, scopeFov: 20, near: 0.1, far: 1100,
-    fogNear: 230, fogFar: 720, exposure: 1.05,
+    fogDensity: 0.0017, exposure: 1.05,
     skyTop: 0x2f7fd8, skyHorizon: 0xbfe3ff, skyBottom: 0xdff1ff,
     shadowArea: 60, visibleActorDistance: 320, visibleItemDistance: 90,
     quality: {
-      niedrig: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, grass: 0 },
-      mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 1024, grass: 1 },
-      hoch:    { pixelRatio: 1.5,  shadows: true,  shadowMap: 2048, grass: 1 },
+      niedrig: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, grass: 0, post: false },
+      mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 1024, grass: 1, post: true },
+      hoch:    { pixelRatio: 1.5,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
     },
     defaultQuality: 'mittel',
   },

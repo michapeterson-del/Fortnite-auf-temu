@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------
 // Spielzustand
 // ---------------------------------------------------------------------
-const game = { mode: 'combat', piece: 'wall', buildTarget: null, buildRepeat: 0, debug: false, interactTarget: null, endAt: 0, victory: false, spectate: null, adsBlend: 0 };
+const game = { mode: 'combat', piece: 'wall', buildTarget: null, buildRepeat: 0, debug: false, interactTarget: null, endAt: 0, victory: false, spectate: null, adsBlend: 0, matchStart: 0 };
 
 function setMode(m) {
   game.mode = m;
@@ -99,13 +99,15 @@ function tick(dt) {
   for (const a of actors) if (a.alive) updateActionTimers(a, dt);
   if (player.alive) updatePlayerCombat();
   updateParticles(dt);
+  updateFx(dt);
   updateTracers(dt);
   updateDamageNumbers(dt);
   // 6) Bauen
   updatePlayerBuilding(dt);
   updateCollapse();
-  // 7) Sturm
+  // 7) Sturm (+ Tageszeit)
   updateStorm(dt);
+  updateTimeOfDay(gameTime - game.matchStart);
   // 8) Loot
   updateLoot(dt);
   game.interactTarget = player.alive && player.phase === 'ground' ? findInteractable(player, CONFIG.player.interactRange) : null;
@@ -224,6 +226,12 @@ function render(alpha, dt) {
     computeRig(renderPos, focus.height, camYaw, camPitch, rig, mode, focus.collider);
     camera.position.set(rig.cx, rig.cy, rig.cz);
     camera.lookAt(rig.cx + rig.fx, rig.cy + rig.fy, rig.cz + rig.fz);
+    if (camShake > 0.001) {
+      const s = camShake * camShake * 0.35;
+      camera.position.x += rand(-s, s); camera.position.y += rand(-s, s); camera.position.z += rand(-s, s);
+      camera.rotation.z += rand(-s, s) * 0.08;
+    }
+    updateGrassField(camera.position.x, camera.position.z, dt);
     const it = currentItem(player);
     const adsFov = it && it.kind === 'weapon' && CONFIG.weapons[it.type].scope ? CONFIG.render.scopeFov : CONFIG.render.adsFov;
     const fov = lerp(CONFIG.render.fov, adsFov, game.adsBlend);
@@ -250,7 +258,7 @@ function render(alpha, dt) {
     if (gameState === 'playing' || gameState === 'ended') { updateTargetInfo(); updateHud(dt, game.interactTarget); }
     if (game.debug) { updateDebugDraw(renderPos); updateDebugText(dt); }
   }
-  renderer.render(scene, camera);
+  renderFrame();
   renderDamageNumbers();
 }
 
@@ -300,6 +308,8 @@ function applyQuality() {
     scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; });
   }
   scene.traverse((o) => { if (o.userData.grass) o.visible = q.grass > 0; });
+  grassField.enabled = q.grass > 0;
+  post.enabled = !!q.post;
   resize();
 }
 
@@ -313,6 +323,7 @@ function resize() {
 function applyTouchUI() { $('touchUI').classList.toggle('hidden', !(touchEnabled() && gameState === 'playing')); }
 
 function startMatch() {
+  game.matchStart = gameTime;
   initBus();
   planBotDrops();
   initStorm();
@@ -390,6 +401,9 @@ function init() {
   if (!DIFF_HINTS[lobby.difficulty]) lobby.difficulty = 'mittel';
   player = createActor({ name: lobby.name || 'Du', isPlayer: true, outfit: SKINS[lobby.skin].outfit });
   initBots(CONFIG.match.players - 1);
+  initPost();
+  buildGrassField();
+  setTodMode(lobby.tod);
   buildLobbyStage();
   setupLobbyUI();
   player.yaw = 0; player.pitch = -0.25;
@@ -397,7 +411,13 @@ function init() {
   refreshHud();
   camera.position.set(0, 110, 300);
   camera.lookAt(0, 5, 0);
+  // Effekt-Shader vorab kompilieren (sonst ruckelt die erste Explosion)
+  const warm = spawnSprite(0, 480, 0, { tex: 'flash', add: true, life: 0.01 });
+  const warm2 = spawnSprite(0, 480, 0, { tex: 'smoke', life: 0.01 });
+  shockwave(0, 480, 0, 1);
   renderer.compile(scene, camera);
+  if (warm) warm.life = 0;
+  if (warm2) warm2.life = 0;
   player.phase = 'bus';
   gameState = 'start';
   $('loadingText').classList.add('hidden');
@@ -412,6 +432,7 @@ window.__game = {
   getHeight, raycastWorld, worldHit, evaluatePlacement, placePart, destroyPart, computeBuildTarget,
   makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
   get player() { return player; }, get state() { return gameState; }, collapseQueue, lobby,
+  fx: { explosion, applyTimeOfDay, setTodMode, barrels, damageBarrel },
   startNow: () => { $('lobby').classList.add('hidden'); startGame(); },
 };
 
