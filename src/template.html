@@ -69,8 +69,12 @@
   #ammoRow { display: flex; gap: 14px; font-weight: 900; font-size: 18px; }
   #ammoInfo.low { color: var(--bad); }
   #hotbar { display: flex; gap: 5px; }
-  .hslot { pointer-events: auto; width: 56px; height: 52px; background: var(--ui); border: 2px solid var(--ui-border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .hslot { pointer-events: auto; position: relative; width: 70px; height: 62px; background: var(--ui); border: 2px solid var(--ui-border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .hslot .n { font-weight: 900; font-size: 15px; }
+  .hslot .ic { width: 62px; height: 34px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,.8)); }
+  .hslot .ic:not([src]), .hslot .ic[src=""] { display: none; }
+  .hslot.has-ic .n { display: none; }
+  .hslot.has-ic .s { position: absolute; right: 4px; bottom: 1px; font-weight: 900; font-size: 12px; }
   .hslot .s { font-size: 11px; opacity: .9; }
   .hslot.active { border-color: #fff; transform: translateY(-5px); box-shadow: 0 0 12px rgba(255,255,255,.5); }
   .hslot.empty { opacity: .5; }
@@ -102,7 +106,9 @@
   .tbtn.on { border-color: var(--accent); background: rgba(255,210,63,.35); }
   .tbtn.down { transform: scale(.92); background: rgba(255,255,255,.3); }
   #btnAction { width: 96px; height: 96px; right: calc(30px + var(--sr)); bottom: calc(150px + var(--sb)); font-size: 16px; background: rgba(200,40,40,.45); }
-  #btnFire2 { width: 66px; height: 66px; left: calc(24px + var(--sl)); top: 42%; background: rgba(200,40,40,.4); }
+  #btnFire2 { width: 108px; height: 108px; left: calc(20px + var(--sl)); top: 36%; font-size: 17px; background: rgba(200,40,40,.45); }
+  #spectateBar { position: fixed; left: 50%; bottom: calc(18px + var(--sb)); transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(10,16,32,.8); border: 1px solid var(--ui-border); border-radius: 12px; padding: 10px 16px; font-weight: 800; font-size: 16px; }
+  #spectateBar button { font: inherit; font-weight: 800; border: 0; border-radius: 10px; padding: 10px 18px; background: var(--accent); color: #1a1a1a; }
   #btnJump { width: 76px; height: 76px; right: calc(140px + var(--sr)); bottom: calc(100px + var(--sb)); }
   #btnCrouch { width: 58px; height: 58px; right: calc(30px + var(--sr)); bottom: calc(80px + var(--sb)); }
   #btnBuild { width: 62px; height: 62px; right: calc(140px + var(--sr)); bottom: calc(188px + var(--sb)); }
@@ -134,7 +140,8 @@
   @media (orientation: portrait) and (pointer: fine) { #rotateHint { display: none; } }
   @media (max-height: 560px) {
     #minimap { width: 120px; height: 120px; }
-    .hslot { width: 46px; height: 44px; }
+    .hslot { width: 56px; height: 50px; }
+    .hslot .ic { width: 50px; height: 28px; }
     #statusBars { width: 180px; }
   }
 </style>
@@ -173,12 +180,12 @@
       <div class="bslot" data-slot="roof"><b>4</b>Dach</div>
     </div>
     <div id="hotbar">
-      <div class="hslot" data-btn="pickaxe"><span class="n"></span><span class="s">F</span></div>
-      <div class="hslot" data-btn="slot0"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot1"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot2"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot3"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot4"><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="pickaxe"><img class="ic" alt=""><span class="n"></span><span class="s">F</span></div>
+      <div class="hslot" data-btn="slot0"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot1"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot2"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot3"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot4"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
     </div>
   </div>
   <div id="debug" class="hidden"></div>
@@ -255,9 +262,11 @@
     <p id="endText"></p>
     <p id="endKills"></p>
     <button id="btnAgain">Nochmal spielen</button>
-    <button id="btnWatch" class="secondary">Weiter zuschauen</button>
+    <button id="btnWatch" class="secondary">Zuschauen</button>
   </div>
 </div>
+
+<div id="spectateBar" class="hidden"><span id="spectateText"></span><button id="btnAgain2">Nochmal spielen</button></div>
 
 <div id="rotateHint">📱↻ Bitte das iPad quer halten</div>
 

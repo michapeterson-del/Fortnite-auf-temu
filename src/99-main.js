@@ -13,6 +13,8 @@ function setPiece(p) { game.piece = p; refreshHud(); }
 function onElimination(a, killer) {
   if (a === player) {
     game.spectate = killer && killer !== player && killer.alive ? killer : null;
+    game.mode = 'combat';
+    refreshHud();
     game.endAt = gameTime + CONFIG.match.endScreenDelay;
     game.victory = false;
     announce(killer && killer !== player ? 'Eliminiert von ' + killer.name : 'Du wurdest eliminiert');
@@ -21,7 +23,7 @@ function onElimination(a, killer) {
     game.endAt = gameTime + CONFIG.match.endScreenDelay;
     announce('#1 VICTORY ROYALE!');
   }
-  if (game.spectate === a) game.spectate = killer && killer.alive ? killer : null;
+  if (game.spectate === a) game.spectate = killer && killer.alive ? killer : (actors.find((x) => x.alive && x !== player) || null);
 }
 
 // Kamera-Rig: Über-die-Schulter, mit eigenem Kollisions-Raycast
@@ -220,7 +222,12 @@ function render(alpha, dt) {
     else renderPos.lerpVectors(focus.prev, focus.pos, alpha);
     const wantAds = player.ads ? 1 : 0;
     game.adsBlend += (wantAds - game.adsBlend) * Math.min(1, dt * 14);
-    computeRig(renderPos, focus.height, player.yaw, player.pitch, rig, mode, focus.collider);
+    let camYaw = player.yaw, camPitch = player.pitch;
+    if (focus !== player) {
+      game.specYaw = game.specYaw === undefined ? focus.yaw : game.specYaw + angleDiff(game.specYaw, focus.yaw) * Math.min(1, dt * 4);
+      camYaw = game.specYaw; camPitch = -0.15;
+    }
+    computeRig(renderPos, focus.height, camYaw, camPitch, rig, mode, focus.collider);
     camera.position.set(rig.cx, rig.cy, rig.cz);
     camera.lookAt(rig.cx + rig.fx, rig.cy + rig.fy, rig.cz + rig.fz);
     const it = currentItem(player);
@@ -351,6 +358,7 @@ $('btnStart').addEventListener('click', startGame);
 $('btnResume').addEventListener('click', resumeGame);
 $('btnQuit').addEventListener('click', () => location.reload());
 $('btnAgain').addEventListener('click', () => location.reload());
+$('btnAgain2').addEventListener('click', () => location.reload());
 $('btnWatch').addEventListener('click', () => { $('endScreen').classList.add('hidden'); });
 $('bigMap').addEventListener('pointerdown', (e) => { e.stopPropagation(); toggleBigMap(); });
 $('btnFullscreen').addEventListener('click', () => {

@@ -29,6 +29,59 @@ function slotLabel(it) {
   return [CONFIG.heals[it.type].short, '×' + it.count];
 }
 
+// ---------------------------------------------------------------------
+// Bilder für die Hotbar: aus den Bauteilen der 3D-Modelle gezeichnet
+// (Waffen/Spitzhacke in Seitenansicht, Heilung von vorne)
+// ---------------------------------------------------------------------
+const iconCache = new Map();
+function hexCss(c) { return '#' + c.toString(16).padStart(6, '0'); }
+function drawPartsIcon(parts, side) {
+  const W2 = 128, H2 = 72, pad = 6;
+  const rects = parts.map((p) => {
+    let w, h, rot = 0, cx, cy;
+    if (side) {
+      cx = -(p.z || 0); cy = p.y || 0;
+      if (p.cyl && Math.abs((p.rx || 0) - Math.PI / 2) < 0.01) { w = p.sy; h = p.sx; }
+      else { w = p.sz; h = p.sy; rot = -(p.rx || 0); }
+    } else { cx = p.x || 0; cy = p.y || 0; w = p.sx; h = p.sy; }
+    return { cx, cy, w, h, rot, c: p.c, cyl: !!p.cyl && !side };
+  });
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const r of rects) {
+    const ext = Math.max(r.w, r.h) * (r.rot ? 0.6 : 0.5);
+    const ex = r.rot ? ext : r.w / 2, ey = r.rot ? ext : r.h / 2;
+    x0 = Math.min(x0, r.cx - ex); x1 = Math.max(x1, r.cx + ex); y0 = Math.min(y0, r.cy - ey); y1 = Math.max(y1, r.cy + ey);
+  }
+  const s = Math.min((W2 - 2 * pad) / (x1 - x0), (H2 - 2 * pad) / (y1 - y0));
+  const c = document.createElement('canvas');
+  c.width = W2; c.height = H2;
+  const g = c.getContext('2d');
+  g.translate(W2 / 2 - (x0 + x1) / 2 * s, H2 / 2 + (y0 + y1) / 2 * s);
+  g.lineJoin = 'round';
+  for (const r of rects) {
+    g.save();
+    g.translate(r.cx * s, -r.cy * s);
+    g.rotate(r.rot);
+    g.fillStyle = hexCss(r.c);
+    g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1.5;
+    const w = Math.max(2, r.w * s), h = Math.max(2, r.h * s);
+    if (r.cyl) { g.beginPath(); g.roundRect ? g.roundRect(-w / 2, -h / 2, w, h, Math.min(w, h) * 0.3) : g.rect(-w / 2, -h / 2, w, h); g.fill(); g.stroke(); }
+    else { g.fillRect(-w / 2, -h / 2, w, h); g.strokeRect(-w / 2, -h / 2, w, h); }
+    g.restore();
+  }
+  return c.toDataURL();
+}
+function itemIcon(it) {
+  const key = it ? it.kind + ':' + it.type + ':' + (it.kind === 'weapon' ? it.rarity : '') : 'pickaxe';
+  let url = iconCache.get(key);
+  if (url) return url;
+  if (!it) url = drawPartsIcon([{ sx: 0.05, sy: 0.05, sz: 0.75, z: -0.3, c: 0x8a5a33 }, { sx: 0.06, sy: 0.5, sz: 0.08, z: -0.66, c: 0x9aa6b2 }, { sx: 0.07, sy: 0.12, sz: 0.1, z: -0.66, c: 0x3fa9ff }], true);
+  else if (it.kind === 'weapon') url = drawPartsIcon(weaponParts(it.type, CONFIG.rarities[it.rarity].color), true);
+  else url = drawPartsIcon(healParts(it.type), false);
+  iconCache.set(key, url);
+  return url;
+}
+
 // Hotbar und Modus-Anzeige neu aufbauen (nur bei Änderungen)
 function refreshHud() {
   if (!player) return;
@@ -40,6 +93,9 @@ function refreshHud() {
     const [name, sub] = idx < 0 ? ['⛏', ''] : slotLabel(it);
     el.querySelector('.n').textContent = name;
     el.querySelector('.s').textContent = sub;
+    const ic = el.querySelector('.ic'), url = idx < 0 || it ? itemIcon(it) : '';
+    if (ic.getAttribute('src') !== url) ic.setAttribute('src', url);
+    el.classList.toggle('has-ic', !!url);
     el.style.background = it ? 'linear-gradient(180deg,' + CONFIG.rarities[it.rarity].css + 'cc, rgba(10,16,32,.7))' : '';
     el.classList.toggle('active', !build && player.inv.sel === idx);
     el.classList.toggle('empty', idx >= 0 && !it);
@@ -186,6 +242,15 @@ function toggleBigMap() { $('bigMap').classList.toggle('hidden'); mapTimer = 0; 
 // ---------------------------------------------------------------------
 function updateHud(dt, interactTarget) {
   const P = CONFIG.player, a = player;
+  // Ausgeschieden: eigene Anzeigen weg, klarer Zuschau-Hinweis
+  const dead = !a.alive;
+  $('hotbarWrap').classList.toggle('hidden', dead);
+  $('statusBars').classList.toggle('hidden', dead);
+  $('spectateBar').classList.toggle('hidden', !dead || !$('endScreen').classList.contains('hidden'));
+  if (dead) {
+    const f = game.spectate && game.spectate.alive ? game.spectate : null;
+    setText($('spectateText'), 'Du bist raus (Platz #' + a.placement + ')' + (f ? ' – du schaust ' + f.name + ' zu' : ''));
+  }
   setStyle(HUD.hpFill, 'width', Math.max(0, a.hp) / P.maxHp * 100 + '%');
   setText(HUD.hpText, String(Math.max(0, Math.ceil(a.hp))));
   setStyle(HUD.shFill, 'width', a.shield / P.maxShield * 100 + '%');

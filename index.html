@@ -69,8 +69,12 @@
   #ammoRow { display: flex; gap: 14px; font-weight: 900; font-size: 18px; }
   #ammoInfo.low { color: var(--bad); }
   #hotbar { display: flex; gap: 5px; }
-  .hslot { pointer-events: auto; width: 56px; height: 52px; background: var(--ui); border: 2px solid var(--ui-border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .hslot { pointer-events: auto; position: relative; width: 70px; height: 62px; background: var(--ui); border: 2px solid var(--ui-border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .hslot .n { font-weight: 900; font-size: 15px; }
+  .hslot .ic { width: 62px; height: 34px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,.8)); }
+  .hslot .ic:not([src]), .hslot .ic[src=""] { display: none; }
+  .hslot.has-ic .n { display: none; }
+  .hslot.has-ic .s { position: absolute; right: 4px; bottom: 1px; font-weight: 900; font-size: 12px; }
   .hslot .s { font-size: 11px; opacity: .9; }
   .hslot.active { border-color: #fff; transform: translateY(-5px); box-shadow: 0 0 12px rgba(255,255,255,.5); }
   .hslot.empty { opacity: .5; }
@@ -102,7 +106,9 @@
   .tbtn.on { border-color: var(--accent); background: rgba(255,210,63,.35); }
   .tbtn.down { transform: scale(.92); background: rgba(255,255,255,.3); }
   #btnAction { width: 96px; height: 96px; right: calc(30px + var(--sr)); bottom: calc(150px + var(--sb)); font-size: 16px; background: rgba(200,40,40,.45); }
-  #btnFire2 { width: 66px; height: 66px; left: calc(24px + var(--sl)); top: 42%; background: rgba(200,40,40,.4); }
+  #btnFire2 { width: 108px; height: 108px; left: calc(20px + var(--sl)); top: 36%; font-size: 17px; background: rgba(200,40,40,.45); }
+  #spectateBar { position: fixed; left: 50%; bottom: calc(18px + var(--sb)); transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(10,16,32,.8); border: 1px solid var(--ui-border); border-radius: 12px; padding: 10px 16px; font-weight: 800; font-size: 16px; }
+  #spectateBar button { font: inherit; font-weight: 800; border: 0; border-radius: 10px; padding: 10px 18px; background: var(--accent); color: #1a1a1a; }
   #btnJump { width: 76px; height: 76px; right: calc(140px + var(--sr)); bottom: calc(100px + var(--sb)); }
   #btnCrouch { width: 58px; height: 58px; right: calc(30px + var(--sr)); bottom: calc(80px + var(--sb)); }
   #btnBuild { width: 62px; height: 62px; right: calc(140px + var(--sr)); bottom: calc(188px + var(--sb)); }
@@ -134,7 +140,8 @@
   @media (orientation: portrait) and (pointer: fine) { #rotateHint { display: none; } }
   @media (max-height: 560px) {
     #minimap { width: 120px; height: 120px; }
-    .hslot { width: 46px; height: 44px; }
+    .hslot { width: 56px; height: 50px; }
+    .hslot .ic { width: 50px; height: 28px; }
     #statusBars { width: 180px; }
   }
 </style>
@@ -173,12 +180,12 @@
       <div class="bslot" data-slot="roof"><b>4</b>Dach</div>
     </div>
     <div id="hotbar">
-      <div class="hslot" data-btn="pickaxe"><span class="n"></span><span class="s">F</span></div>
-      <div class="hslot" data-btn="slot0"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot1"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot2"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot3"><span class="n"></span><span class="s"></span></div>
-      <div class="hslot" data-btn="slot4"><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="pickaxe"><img class="ic" alt=""><span class="n"></span><span class="s">F</span></div>
+      <div class="hslot" data-btn="slot0"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot1"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot2"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot3"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
+      <div class="hslot" data-btn="slot4"><img class="ic" alt=""><span class="n"></span><span class="s"></span></div>
     </div>
   </div>
   <div id="debug" class="hidden"></div>
@@ -255,9 +262,11 @@
     <p id="endText"></p>
     <p id="endKills"></p>
     <button id="btnAgain">Nochmal spielen</button>
-    <button id="btnWatch" class="secondary">Weiter zuschauen</button>
+    <button id="btnWatch" class="secondary">Zuschauen</button>
   </div>
 </div>
+
+<div id="spectateBar" class="hidden"><span id="spectateText"></span><button id="btnAgain2">Nochmal spielen</button></div>
 
 <div id="rotateHint">📱↻ Bitte das iPad quer halten</div>
 
@@ -3822,6 +3831,59 @@ function slotLabel(it) {
   return [CONFIG.heals[it.type].short, '×' + it.count];
 }
 
+// ---------------------------------------------------------------------
+// Bilder für die Hotbar: aus den Bauteilen der 3D-Modelle gezeichnet
+// (Waffen/Spitzhacke in Seitenansicht, Heilung von vorne)
+// ---------------------------------------------------------------------
+const iconCache = new Map();
+function hexCss(c) { return '#' + c.toString(16).padStart(6, '0'); }
+function drawPartsIcon(parts, side) {
+  const W2 = 128, H2 = 72, pad = 6;
+  const rects = parts.map((p) => {
+    let w, h, rot = 0, cx, cy;
+    if (side) {
+      cx = -(p.z || 0); cy = p.y || 0;
+      if (p.cyl && Math.abs((p.rx || 0) - Math.PI / 2) < 0.01) { w = p.sy; h = p.sx; }
+      else { w = p.sz; h = p.sy; rot = -(p.rx || 0); }
+    } else { cx = p.x || 0; cy = p.y || 0; w = p.sx; h = p.sy; }
+    return { cx, cy, w, h, rot, c: p.c, cyl: !!p.cyl && !side };
+  });
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const r of rects) {
+    const ext = Math.max(r.w, r.h) * (r.rot ? 0.6 : 0.5);
+    const ex = r.rot ? ext : r.w / 2, ey = r.rot ? ext : r.h / 2;
+    x0 = Math.min(x0, r.cx - ex); x1 = Math.max(x1, r.cx + ex); y0 = Math.min(y0, r.cy - ey); y1 = Math.max(y1, r.cy + ey);
+  }
+  const s = Math.min((W2 - 2 * pad) / (x1 - x0), (H2 - 2 * pad) / (y1 - y0));
+  const c = document.createElement('canvas');
+  c.width = W2; c.height = H2;
+  const g = c.getContext('2d');
+  g.translate(W2 / 2 - (x0 + x1) / 2 * s, H2 / 2 + (y0 + y1) / 2 * s);
+  g.lineJoin = 'round';
+  for (const r of rects) {
+    g.save();
+    g.translate(r.cx * s, -r.cy * s);
+    g.rotate(r.rot);
+    g.fillStyle = hexCss(r.c);
+    g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1.5;
+    const w = Math.max(2, r.w * s), h = Math.max(2, r.h * s);
+    if (r.cyl) { g.beginPath(); g.roundRect ? g.roundRect(-w / 2, -h / 2, w, h, Math.min(w, h) * 0.3) : g.rect(-w / 2, -h / 2, w, h); g.fill(); g.stroke(); }
+    else { g.fillRect(-w / 2, -h / 2, w, h); g.strokeRect(-w / 2, -h / 2, w, h); }
+    g.restore();
+  }
+  return c.toDataURL();
+}
+function itemIcon(it) {
+  const key = it ? it.kind + ':' + it.type + ':' + (it.kind === 'weapon' ? it.rarity : '') : 'pickaxe';
+  let url = iconCache.get(key);
+  if (url) return url;
+  if (!it) url = drawPartsIcon([{ sx: 0.05, sy: 0.05, sz: 0.75, z: -0.3, c: 0x8a5a33 }, { sx: 0.06, sy: 0.5, sz: 0.08, z: -0.66, c: 0x9aa6b2 }, { sx: 0.07, sy: 0.12, sz: 0.1, z: -0.66, c: 0x3fa9ff }], true);
+  else if (it.kind === 'weapon') url = drawPartsIcon(weaponParts(it.type, CONFIG.rarities[it.rarity].color), true);
+  else url = drawPartsIcon(healParts(it.type), false);
+  iconCache.set(key, url);
+  return url;
+}
+
 // Hotbar und Modus-Anzeige neu aufbauen (nur bei Änderungen)
 function refreshHud() {
   if (!player) return;
@@ -3833,6 +3895,9 @@ function refreshHud() {
     const [name, sub] = idx < 0 ? ['⛏', ''] : slotLabel(it);
     el.querySelector('.n').textContent = name;
     el.querySelector('.s').textContent = sub;
+    const ic = el.querySelector('.ic'), url = idx < 0 || it ? itemIcon(it) : '';
+    if (ic.getAttribute('src') !== url) ic.setAttribute('src', url);
+    el.classList.toggle('has-ic', !!url);
     el.style.background = it ? 'linear-gradient(180deg,' + CONFIG.rarities[it.rarity].css + 'cc, rgba(10,16,32,.7))' : '';
     el.classList.toggle('active', !build && player.inv.sel === idx);
     el.classList.toggle('empty', idx >= 0 && !it);
@@ -3979,6 +4044,15 @@ function toggleBigMap() { $('bigMap').classList.toggle('hidden'); mapTimer = 0; 
 // ---------------------------------------------------------------------
 function updateHud(dt, interactTarget) {
   const P = CONFIG.player, a = player;
+  // Ausgeschieden: eigene Anzeigen weg, klarer Zuschau-Hinweis
+  const dead = !a.alive;
+  $('hotbarWrap').classList.toggle('hidden', dead);
+  $('statusBars').classList.toggle('hidden', dead);
+  $('spectateBar').classList.toggle('hidden', !dead || !$('endScreen').classList.contains('hidden'));
+  if (dead) {
+    const f = game.spectate && game.spectate.alive ? game.spectate : null;
+    setText($('spectateText'), 'Du bist raus (Platz #' + a.placement + ')' + (f ? ' – du schaust ' + f.name + ' zu' : ''));
+  }
   setStyle(HUD.hpFill, 'width', Math.max(0, a.hp) / P.maxHp * 100 + '%');
   setText(HUD.hpText, String(Math.max(0, Math.ceil(a.hp))));
   setStyle(HUD.shFill, 'width', a.shield / P.maxShield * 100 + '%');
@@ -4190,6 +4264,8 @@ function setPiece(p) { game.piece = p; refreshHud(); }
 function onElimination(a, killer) {
   if (a === player) {
     game.spectate = killer && killer !== player && killer.alive ? killer : null;
+    game.mode = 'combat';
+    refreshHud();
     game.endAt = gameTime + CONFIG.match.endScreenDelay;
     game.victory = false;
     announce(killer && killer !== player ? 'Eliminiert von ' + killer.name : 'Du wurdest eliminiert');
@@ -4198,7 +4274,7 @@ function onElimination(a, killer) {
     game.endAt = gameTime + CONFIG.match.endScreenDelay;
     announce('#1 VICTORY ROYALE!');
   }
-  if (game.spectate === a) game.spectate = killer && killer.alive ? killer : null;
+  if (game.spectate === a) game.spectate = killer && killer.alive ? killer : (actors.find((x) => x.alive && x !== player) || null);
 }
 
 // Kamera-Rig: Über-die-Schulter, mit eigenem Kollisions-Raycast
@@ -4397,7 +4473,12 @@ function render(alpha, dt) {
     else renderPos.lerpVectors(focus.prev, focus.pos, alpha);
     const wantAds = player.ads ? 1 : 0;
     game.adsBlend += (wantAds - game.adsBlend) * Math.min(1, dt * 14);
-    computeRig(renderPos, focus.height, player.yaw, player.pitch, rig, mode, focus.collider);
+    let camYaw = player.yaw, camPitch = player.pitch;
+    if (focus !== player) {
+      game.specYaw = game.specYaw === undefined ? focus.yaw : game.specYaw + angleDiff(game.specYaw, focus.yaw) * Math.min(1, dt * 4);
+      camYaw = game.specYaw; camPitch = -0.15;
+    }
+    computeRig(renderPos, focus.height, camYaw, camPitch, rig, mode, focus.collider);
     camera.position.set(rig.cx, rig.cy, rig.cz);
     camera.lookAt(rig.cx + rig.fx, rig.cy + rig.fy, rig.cz + rig.fz);
     const it = currentItem(player);
@@ -4528,6 +4609,7 @@ $('btnStart').addEventListener('click', startGame);
 $('btnResume').addEventListener('click', resumeGame);
 $('btnQuit').addEventListener('click', () => location.reload());
 $('btnAgain').addEventListener('click', () => location.reload());
+$('btnAgain2').addEventListener('click', () => location.reload());
 $('btnWatch').addEventListener('click', () => { $('endScreen').classList.add('hidden'); });
 $('bigMap').addEventListener('pointerdown', (e) => { e.stopPropagation(); toggleBigMap(); });
 $('btnFullscreen').addEventListener('click', () => {
