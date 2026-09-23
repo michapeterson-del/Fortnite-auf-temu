@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------
 // Gegenstände: Modelle (eine Geometrie pro Modell, Vertexfarben, geteilt)
 // ---------------------------------------------------------------------
-const vcMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const vcMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.35, envMapIntensity: 0.9 });
 const modelCache = new Map();
 const _mm = new THREE.Matrix4(), _mq = new THREE.Quaternion(), _me = new THREE.Euler(), _ms = new THREE.Vector3(), _mp = new THREE.Vector3(), _mc = new THREE.Color();
 const unitBoxNI = unitBox.toNonIndexed();

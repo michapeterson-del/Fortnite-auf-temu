@@ -10,59 +10,7 @@ const gliderGeo = new THREE.SphereGeometry(1.7, 12, 5, 0, Math.PI * 2, 0, Math.P
 const lineGeo = new THREE.CylinderGeometry(0.015, 0.015, 1, 4);
 lineGeo.translate(0, 0.5, 0);
 
-function createCharacterMesh(outfit) {
-  const g = new THREE.Group();
-  const skin = lambert(outfit.skin), shirt = lambert(outfit.shirt), pants = lambert(outfit.pants), hairM = lambert(outfit.hair);
-  const dark = lambert(0x1c1f26), white = lambert(0xffffff);
-  const part = (geo, mat, sx, sy, sz, x, y, z, parent) => {
-    const m = new THREE.Mesh(geo, mat);
-    m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = true;
-    (parent || g).add(m); return m;
-  };
-  const hip = new THREE.Group(); hip.position.y = 0.9; g.add(hip);
-  const legL = new THREE.Group(); legL.position.set(-0.12, 0, 0); hip.add(legL);
-  const legR = new THREE.Group(); legR.position.set(0.12, 0, 0); hip.add(legR);
-  for (const leg of [legL, legR]) {
-    part(unitBox, pants, 0.21, 0.82, 0.23, 0, -0.41, 0, leg);
-    part(unitBox, dark, 0.23, 0.1, 0.32, 0, -0.85, -0.04, leg);
-  }
-  const torso = new THREE.Group(); hip.add(torso);
-  part(unitBox, shirt, 0.54, 0.6, 0.3, 0, 0.3, 0, torso);
-  part(unitBox, dark, 0.56, 0.07, 0.32, 0, 0.02, 0, torso);
-  part(unitBox, lambert(outfit.pack), 0.4, 0.42, 0.16, 0, 0.32, 0.22, torso);
-  const head = new THREE.Group(); head.position.set(0, 0.72, 0); torso.add(head);
-  part(unitSphere, skin, 0.4, 0.42, 0.4, 0, 0.1, 0, head);
-  part(unitSphere, hairM, 0.43, 0.26, 0.43, 0, 0.23, 0.02, head);
-  part(unitBox, white, 0.07, 0.06, 0.02, -0.085, 0.12, -0.195, head);
-  part(unitBox, white, 0.07, 0.06, 0.02, 0.085, 0.12, -0.195, head);
-  part(unitBox, dark, 0.035, 0.045, 0.02, -0.085, 0.12, -0.205, head);
-  part(unitBox, dark, 0.035, 0.045, 0.02, 0.085, 0.12, -0.205, head);
-  const armL = new THREE.Group(); armL.position.set(-0.35, 0.56, 0); torso.add(armL);
-  const armR = new THREE.Group(); armR.position.set(0.35, 0.56, 0); torso.add(armR);
-  for (const arm of [armL, armR]) {
-    part(unitBox, shirt, 0.15, 0.36, 0.17, 0, -0.17, 0, arm);
-    part(unitBox, skin, 0.13, 0.26, 0.14, 0, -0.46, 0, arm);
-  }
-  const hand = new THREE.Group(); hand.position.set(0, -0.6, 0); armR.add(hand);
-  const glider = new THREE.Group();
-  const canopy = new THREE.Mesh(gliderGeo, new THREE.MeshLambertMaterial({ color: outfit.shirt, side: THREE.DoubleSide }));
-  canopy.scale.set(1.25, 0.55, 0.85); canopy.position.y = 2.2; canopy.castShadow = true;
-  glider.add(canopy);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const l = new THREE.Mesh(lineGeo, dark);
-    l.position.set(sx * 0.3, 1.45, 0);
-    l.scale.set(1, 1.2, 1);
-    l.rotation.z = -sx * 0.85; l.rotation.x = sz * 0.45;
-    glider.add(l);
-  }
-  glider.visible = false;
-  g.add(glider);
-  return { group: g, hip, torso, head, legL, legR, armL, armR, hand, glider, held: null, heldKey: '' };
-}
-
-function randomOutfit() {
-  return { skin: pick(SKIN_TONES), shirt: pick(SHIRTS), pants: pick(PANTS), hair: pick(HAIRS), pack: pick(PANTS) };
-}
+// Modell und Animation: siehe 52-character.js
 
 let actorIdCounter = 0;
 function createActor(opts) {
@@ -193,63 +141,4 @@ function updateHeldModel(a) {
   m.held = it ? itemModel(it, true) : pickaxeModel();
   m.hand.add(m.held);
   m.heldKey = key;
-}
-
-// ---------------------------------------------------------------------
-// Animation (einfach, volle Gelenk-Hierarchie folgt in Phase 12)
-// ---------------------------------------------------------------------
-function animateCharacter(a, pos, dt) {
-  const m = a.model, g = m.group;
-  if (a.phase === 'bus') { g.visible = false; return; }
-  if (a.phase === 'dead') {
-    const t = gameTime - a.deathTime;
-    if (t > 5) { g.visible = false; return; }
-    g.visible = true;
-    g.position.copy(pos);
-    g.rotation.set(0, a.deathDir, 0);
-    const k = Math.min(1, t / 0.6);
-    m.hip.rotation.x = -k * 1.45;
-    m.hip.position.y = 0.9 - k * 0.7;
-    m.glider.visible = false;
-    return;
-  }
-  g.visible = true;
-  g.position.copy(pos);
-  g.rotation.set(0, a.yaw, 0);
-  g.scale.set(1, a.height / CONFIG.player.height, 1);
-  m.hip.position.y = 0.9;
-  m.glider.visible = a.phase === 'glide';
-  updateHeldModel(a);
-  const it = currentItem(a);
-  if (a.phase === 'freefall') {
-    m.hip.rotation.x = -1.25; m.hip.position.y = 1.0;
-    m.armL.rotation.set(0, 0, -1.3); m.armR.rotation.set(0, 0, 1.3);
-    m.legL.rotation.x = 0.3; m.legR.rotation.x = 0.3; m.head.rotation.x = 1.0;
-    return;
-  }
-  m.head.rotation.x = 0;
-  if (a.phase === 'glide') {
-    m.hip.rotation.x = 0;
-    m.armL.rotation.set(0, 0, -2.6); m.armR.rotation.set(0, 0, 2.6);
-    m.legL.rotation.x = 0.2; m.legR.rotation.x = -0.1;
-    return;
-  }
-  m.hip.rotation.x = 0;
-  const speed = Math.hypot(a.vel.x, a.vel.z);
-  const amp = Math.min(1, speed / CONFIG.player.walkSpeed) * 0.7;
-  const sw = a.onGround ? Math.sin(a.walkPhase * 3.2) * amp : 0.4;
-  m.legL.rotation.x = sw; m.legR.rotation.x = -sw;
-  m.torso.rotation.x = clamp(-a.pitch * 0.35, -0.4, 0.4);
-  if (it && it.kind === 'weapon') {
-    const rec = a.recoil;
-    m.armR.rotation.set(1.45 + rec * 0.25 + a.pitch * 0.6, 0, 0.1);
-    m.armL.rotation.set(1.4 + rec * 0.25 + a.pitch * 0.6, 0, -0.55);
-  } else if (a.healTimer > 0) {
-    m.armR.rotation.set(2.2 + Math.sin(gameTime * 10) * 0.2, 0, 0.2);
-    m.armL.rotation.set(1.0, 0, -0.3);
-  } else {
-    m.armL.rotation.set(-sw * 0.8, 0, -0.05);
-    const swingT = a.swing > 0 ? a.swing / CONFIG.pickaxe.swingTime : 0;
-    m.armR.rotation.set(swingT > 0 ? 2.4 * Math.sin(swingT * Math.PI) : 0.5 + sw * 0.5, 0, 0.05);
-  }
 }

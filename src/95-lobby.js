@@ -67,17 +67,11 @@ function renderLobby(dt) {
   g.scale.set(1, 1, 1);
   m.glider.visible = false;
   updateHeldModel(player);
-  const breath = Math.sin(lobby.t * 2.2);
-  m.hip.rotation.x = 0; m.hip.position.y = 0.9 + breath * 0.01;
-  m.torso.rotation.x = breath * 0.02;
-  m.head.rotation.set(0, Math.sin(lobby.t * 0.7) * 0.25, 0);
-  m.legL.rotation.x = 0; m.legR.rotation.x = 0;
-  m.armL.rotation.set(0.1, 0, -0.18 - breath * 0.03);
-  m.armR.rotation.set(0.6, 0, 0.15);
+  animateLobbyCharacter(m, lobby.t, dt);
   lobby.ring.material.opacity = 0.6 + Math.sin(lobby.t * 3) * 0.3;
   // Figur rechts im Bild, Einstellungen links
-  camera.position.set(LOBBY_POS.x - 1.2, LOBBY_POS.y + 1.4, LOBBY_POS.z + 3.7);
-  camera.lookAt(LOBBY_POS.x - 1.45, LOBBY_POS.y + 1.0, LOBBY_POS.z);
+  camera.position.set(LOBBY_POS.x - 0.95, LOBBY_POS.y + 1.35, LOBBY_POS.z + 2.9);
+  camera.lookAt(LOBBY_POS.x - 1.15, LOBBY_POS.y + 1.02, LOBBY_POS.z);
   if (Math.abs(camera.fov - CONFIG.render.fov) > 0.01) { camera.fov = CONFIG.render.fov; camera.updateProjectionMatrix(); }
   sky.position.copy(camera.position);
   sun.position.set(LOBBY_POS.x + SUN_DIR.x * 50, LOBBY_POS.y + SUN_DIR.y * 50, LOBBY_POS.z + SUN_DIR.z * 50);

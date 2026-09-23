@@ -217,7 +217,7 @@ function botThink(a) {
   if (ai.state === 'fight') {
     if (gameTime > ai.strafeUntil) { ai.strafe = -ai.strafe; ai.strafeUntil = gameTime + rand(B.strafeTime[0], B.strafeTime[1]); }
     if (Math.random() < 0.08) ai.wantJump = true;
-    ai.wantCrouch = it.type === 'sniper' || (it.type === 'ar' && dist > 35 && Math.random() < 0.5);
+    ai.wantCrouch = it.type === 'sniper' && dist > 40;
     const err = ai.aimError * dist;
     ai.aimOffX = rand(-err, err); ai.aimOffY = rand(-err, err) * 0.6; ai.aimOffZ = rand(-err, err);
   } else ai.wantCrouch = false;
