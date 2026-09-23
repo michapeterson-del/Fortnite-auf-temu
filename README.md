@@ -5,6 +5,7 @@ Three.js ist direkt eingebettet, es wird nichts aus dem Internet nachgeladen.
 
 ## Was drin ist
 
+- **Lobby:** Name, Bot-Stärke (Leicht / Mittel / Schwer / Gemischt), Anzahl der Gegner (1–24), 6 Outfits und deine Statistik (Spiele, Siege, Eliminierungen); alles wird auf dem Gerät gespeichert
 - **Battle Bus:** fliegt quer über die Insel, Absprung, freier Fall (Sturzflug möglich), Gleiter geht automatisch auf
 - **24 Bots** mit drei Stärken: looten Truhen und Waffen, kämpfen auf passender Entfernung, weichen seitlich aus, bauen Wände wenn sie beschossen werden, heilen sich und laufen vor dem Sturm davon
 - **Truhen** (goldenes Leuchten und Funkeln) und **Bodenloot** mit Lichtstrahl in der Seltenheitsfarbe

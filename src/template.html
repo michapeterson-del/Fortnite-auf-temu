@@ -120,6 +120,39 @@
   #buildBtns { position: absolute; right: calc(110px + var(--sr)); bottom: calc(262px + var(--sb)); display: flex; gap: 8px; pointer-events: none; }
   #buildBtns .tbtn { position: static; width: 56px; height: 56px; border-radius: 12px; font-size: 12px; }
 
+
+  /* Lobby */
+  #lobby { position: fixed; inset: 0; pointer-events: none; }
+  #lobby > * { pointer-events: auto; }
+  #lobbyTitle { position: absolute; left: calc(24px + var(--sl)); top: calc(18px + var(--st)); pointer-events: none; }
+  #lobbyTitle h1 { margin: 0; font-size: 40px; font-style: italic; font-weight: 900; color: var(--accent); letter-spacing: 1px; text-shadow: 0 3px 0 #b8860b, 0 6px 14px rgba(0,0,0,.45); }
+  #lobbyTitle span { font-weight: 900; letter-spacing: 6px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  .lpanel { position: absolute; left: calc(24px + var(--sl)); top: calc(110px + var(--st)); bottom: calc(24px + var(--sb)); width: min(380px, 44vw); overflow-y: auto; touch-action: pan-y;
+    background: rgba(15,22,48,.78); border: 1px solid var(--ui-border); border-radius: 16px; padding: 16px 18px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .lpanel label { display: block; font-weight: 800; font-size: 14px; margin: 12px 0 6px; opacity: .95; }
+  .lpanel label:first-child { margin-top: 0; }
+  .lpanel input[type=text], #lobbyName { width: 100%; box-sizing: border-box; font: inherit; font-size: 17px; font-weight: 700; padding: 9px 12px; border-radius: 10px; border: 2px solid var(--ui-border); background: rgba(0,0,0,.35); color: #fff; -webkit-user-select: text; user-select: text; }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .seg button { font: inherit; font-weight: 800; font-size: 14px; padding: 10px 4px; border-radius: 10px; border: 2px solid var(--ui-border); background: rgba(255,255,255,.08); color: #fff; touch-action: manipulation; }
+  .seg button.on { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .seg button[data-v="leicht"].on { background: #6fe06f; border-color: #6fe06f; }
+  .seg button[data-v="schwer"].on { background: #ff6b5a; border-color: #ff6b5a; }
+  .seg button[data-v="gemischt"].on { background: #b04fff; border-color: #b04fff; color: #fff; }
+  .hint { font-size: 12.5px; opacity: .85; margin: 6px 0 0; min-height: 32px; }
+  #botCount { width: 100%; }
+  #skinRow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skin { width: 46px; height: 46px; border-radius: 12px; border: 3px solid rgba(255,255,255,.3); touch-action: manipulation; }
+  .skin.on { border-color: #fff; box-shadow: 0 0 12px rgba(255,255,255,.7); transform: scale(1.08); }
+  #lobbyStats { margin-top: 16px; font-size: 13px; opacity: .8; font-weight: 700; }
+  #lobbyRight { position: absolute; right: calc(28px + var(--sr)); bottom: calc(28px + var(--sb)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  #lobbyRight button { font: inherit; font-weight: 900; border: 0; border-radius: 14px; touch-action: manipulation; }
+  #lobbyRight #btnStart { font-size: 34px; font-style: italic; padding: 18px 58px; background: var(--accent); color: #1a1a1a; box-shadow: 0 5px 0 #b8860b, 0 10px 24px rgba(0,0,0,.4); letter-spacing: 1px; }
+  #btnStart:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8860b; }
+  #lobbyRight #btnHelp { font-size: 15px; padding: 10px 20px; background: rgba(15,22,48,.8); color: #fff; border: 1px solid var(--ui-border) !important; }
+  #loadingText { margin: 0; font-weight: 800; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  #matchmaking { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); background: rgba(15,22,48,.85); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 26px; display: flex; align-items: center; gap: 16px; font-weight: 900; font-size: 20px; }
+  #matchmaking b { font-size: 34px; color: var(--accent); }
+
   /* Menüs */
   .screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 12, 26, .55); }
   .panel { background: rgba(23,32,61,.94); border: 1px solid var(--ui-border); border-radius: 16px; padding: 22px 26px; width: min(580px, 92vw); max-height: 88vh; overflow-y: auto; touch-action: pan-y; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
@@ -215,10 +248,34 @@
 
 <div id="bigMap" class="hidden"><canvas id="bigMapCanvas" width="640" height="640"></canvas></div>
 
-<div id="startScreen" class="screen">
+<div id="lobby">
+  <div id="lobbyTitle"><h1>FORTNITE AUF TEMU</h1><span>LOBBY</span></div>
+  <div id="lobbyPanel" class="lpanel">
+    <label>Name</label>
+    <input id="lobbyName" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Dein Name">
+    <label>Bot-Stärke</label>
+    <div class="seg" id="diffSeg">
+      <button data-v="leicht">Leicht</button><button data-v="mittel">Mittel</button><button data-v="schwer">Schwer</button><button data-v="gemischt">Gemischt</button>
+    </div>
+    <p class="hint" id="diffHint"></p>
+    <label>Gegner: <b id="botCountVal">24</b></label>
+    <input type="range" id="botCount" min="1" max="24" step="1">
+    <label>Outfit: <b id="skinName"></b></label>
+    <div id="skinRow"></div>
+    <div id="lobbyStats"></div>
+  </div>
+  <div id="lobbyRight">
+    <p id="loadingText">Insel wird erzeugt …</p>
+    <button id="btnStart" class="hidden">SPIELEN</button>
+    <button id="btnHelp" class="secondary">Steuerung</button>
+  </div>
+  <div id="matchmaking" class="hidden"><span>Spiel wird gesucht …</span><b id="mmCount">3</b></div>
+</div>
+
+<div id="helpPanel" class="screen hidden">
   <div class="panel">
-    <h1>FORTNITE AUF TEMU</h1>
-    <p>25 Spieler, ein Battle Bus, eine Insel. Spring ab, finde Truhen und Waffen, bleib im Kreis und hol dir den Victory Royale! Läuft komplett offline.</p>
+    <h2>Steuerung</h2>
+    <p>Spring aus dem Battle Bus, finde Truhen und Waffen, bleib im Kreis und hol dir den Victory Royale! Läuft komplett offline.</p>
     <div class="controls" id="controlsKeyboard">
       <b>WASD</b><span>Laufen (Shift = Sprinten)</span>
       <b>Maus</b><span>Umsehen · Links = Schießen · Rechts = Zielen</span>
@@ -236,8 +293,7 @@
       <b>Feuer</b><span>Schießen – beim Halten ziehen zum Zielen</span>
       <b>Hotbar</b><span>Unten antippen zum Wechseln · Minikarte antippen = große Karte</span>
     </div>
-    <p id="loadingText">Insel wird erzeugt …</p>
-    <button id="btnStart" class="hidden">Spielen</button>
+    <button id="btnHelpClose">Alles klar</button>
   </div>
 </div>
 
@@ -252,7 +308,7 @@
     <div class="row"><span>Automatisch sprinten</span><select id="optSprint"><option value="1">Ja</option><option value="0">Nein</option></select></div>
     <button id="btnResume">Weiter</button>
     <button id="btnFullscreen" class="secondary">Vollbild</button>
-    <button id="btnQuit" class="secondary">Neue Runde</button>
+    <button id="btnQuit" class="secondary">Zur Lobby</button>
   </div>
 </div>
 
@@ -261,12 +317,12 @@
     <div id="endTitle"></div>
     <p id="endText"></p>
     <p id="endKills"></p>
-    <button id="btnAgain">Nochmal spielen</button>
+    <button id="btnAgain">Zurück zur Lobby</button>
     <button id="btnWatch" class="secondary">Zuschauen</button>
   </div>
 </div>
 
-<div id="spectateBar" class="hidden"><span id="spectateText"></span><button id="btnAgain2">Nochmal spielen</button></div>
+<div id="spectateBar" class="hidden"><span id="spectateText"></span><button id="btnAgain2">Zur Lobby</button></div>
 
 <div id="rotateHint">📱↻ Bitte das iPad quer halten</div>
 

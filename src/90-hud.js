@@ -308,12 +308,13 @@ function showEndScreen(victory) {
   if (endShown) return;
   endShown = true;
   gameState = 'ended';
+  recordMatchStats(victory);
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   $('endTitle').textContent = victory ? '#1 VICTORY ROYALE' : 'Platz #' + player.placement;
   $('endTitle').classList.toggle('win', victory);
   const killer = player.lastAttacker;
   $('endText').textContent = victory
-    ? 'Du hast alle ' + (CONFIG.match.players - 1) + ' Gegner überlebt!'
+    ? 'Du hast alle ' + (actors.length - 1) + ' Gegner überlebt!'
     : (killer && killer !== player ? 'Eliminiert von ' + killer.name : 'Du wurdest eliminiert');
   $('endKills').textContent = 'Eliminierungen: ' + player.kills;
   $('endScreen').classList.remove('hidden');

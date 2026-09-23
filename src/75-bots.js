@@ -2,7 +2,7 @@
 // Bots: KI denkt max. 5×/s, Steuerung + Zielen laufen jeden Tick
 // ---------------------------------------------------------------------
 const PREF_RANGE = { pistol: 16, smg: 11, ar: 26, shotgun: 5, sniper: 60 };
-const TURN_RATE = { leicht: 3.2, mittel: 4.5, schwer: 6.5 };
+const TURN_RATE = { leicht: 2.4, mittel: 4.5, schwer: 7 };
 
 function createBotAI() {
   const dk = weightedKey(CONFIG.bots.difficulties, 'weight');

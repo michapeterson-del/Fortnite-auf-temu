@@ -119,9 +119,9 @@ const CONFIG = {
     thinkRate: 5, sightRange: 85, sightChecks: 3, fov: 1.9,
     lootRange: 110, wanderRange: 70, reachDistance: 1.8,
     difficulties: {
-      leicht:  { weight: 40, aimError: 0.075, reaction: 0.65, buildChance: 0.15 },
-      mittel:  { weight: 40, aimError: 0.045, reaction: 0.4,  buildChance: 0.3 },
-      schwer:  { weight: 20, aimError: 0.024, reaction: 0.25, buildChance: 0.5 },
+      leicht:  { weight: 40, aimError: 0.11,  reaction: 0.9,  buildChance: 0.1 },
+      mittel:  { weight: 40, aimError: 0.05,  reaction: 0.45, buildChance: 0.3 },
+      schwer:  { weight: 20, aimError: 0.022, reaction: 0.22, buildChance: 0.55 },
     },
     healThreshold: 60, strafeTime: [0.6, 1.6],
     names: ['Lukas', 'Mia', 'Finn', 'Emma', 'Ben', 'Lena', 'Paul', 'Hanna', 'Jonas', 'Lea', 'Elias', 'Marie', 'Noah', 'Sophie', 'Leon', 'Clara', 'Felix', 'Ida', 'Max', 'Nele', 'Tim', 'Lina', 'Theo', 'Frieda', 'Oskar', 'Greta'],

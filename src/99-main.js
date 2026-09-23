@@ -204,14 +204,8 @@ const _camTarget = new THREE.Vector3();
 let lastFrameDt = 0;
 function render(alpha, dt) {
   lastFrameDt = dt;
-  if (gameState === 'start') {
-    // Startbildschirm: Kamera kreist langsam über der Insel
-    const t = performance.now() * 0.00004;
-    camera.position.set(Math.cos(t) * 300, 110, Math.sin(t) * 300);
-    camera.lookAt(0, 5, 0);
-    sky.position.copy(camera.position);
-    if (cloudGroup) cloudGroup.rotation.y += dt * 0.004;
-    renderer.render(scene, camera);
+  if (gameState === 'start' || gameState === 'loading') {
+    if (player && lobby.stage) renderLobby(dt);
     return;
   }
   if (player) {
@@ -327,7 +321,9 @@ function startMatch() {
 
 function startGame() {
   initAudio();
-  $('startScreen').classList.add('hidden');
+  $('lobby').classList.add('hidden');
+  $('helpPanel').classList.add('hidden');
+  applyLobbySettings();
   $('hud').classList.remove('hidden');
   gameState = 'playing';
   lastTime = performance.now(); accumulator = 0;
@@ -354,7 +350,6 @@ function resumeGame() {
   if (!touchEnabled() && document.body.requestPointerLock) document.body.requestPointerLock();
 }
 
-$('btnStart').addEventListener('click', startGame);
 $('btnResume').addEventListener('click', resumeGame);
 $('btnQuit').addEventListener('click', () => location.reload());
 $('btnAgain').addEventListener('click', () => location.reload());
@@ -390,16 +385,18 @@ function init() {
   buildWorld();
   buildMapBase();
   populateLoot();
-  player = createActor({ name: 'Du', isPlayer: true, outfit: { skin: 0xf1c9a5, shirt: 0x2f6fd6, pants: 0x2b2f3a, hair: 0x3b2a1a, pack: 0xffd23f } });
+  lobby.skin = clamp(lobby.skin | 0, 0, SKINS.length - 1);
+  lobby.bots = clamp(lobby.bots | 0, 1, CONFIG.match.players - 1);
+  if (!DIFF_HINTS[lobby.difficulty]) lobby.difficulty = 'mittel';
+  player = createActor({ name: lobby.name || 'Du', isPlayer: true, outfit: SKINS[lobby.skin].outfit });
   initBots(CONFIG.match.players - 1);
-  // Vorschau hinter dem Startbildschirm: Blick über die Insel
-  player.pos.set(0, 60, 180); player.prev.copy(player.pos);
-  player.yaw = 0; player.pitch = -0.25; player.phase = 'freefall';
+  buildLobbyStage();
+  setupLobbyUI();
+  player.yaw = 0; player.pitch = -0.25;
   applyQuality();
   refreshHud();
-  computeRig(player.pos, player.height, player.yaw, player.pitch, rig, 'air', null);
-  camera.position.set(rig.cx, rig.cy, rig.cz);
-  camera.lookAt(rig.cx + rig.fx, rig.cy + rig.fy, rig.cz + rig.fz);
+  camera.position.set(0, 110, 300);
+  camera.lookAt(0, 5, 0);
   renderer.compile(scene, camera);
   player.phase = 'bus';
   gameState = 'start';
@@ -414,7 +411,8 @@ window.__game = {
   tick: (n) => { for (let i = 0; i < n; i++) tick(TICK); },
   getHeight, raycastWorld, worldHit, evaluatePlacement, placePart, destroyPart, computeBuildTarget,
   makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
-  get player() { return player; }, get state() { return gameState; }, collapseQueue,
+  get player() { return player; }, get state() { return gameState; }, collapseQueue, lobby,
+  startNow: () => { $('lobby').classList.add('hidden'); startGame(); },
 };
 
 setTimeout(init, 30);

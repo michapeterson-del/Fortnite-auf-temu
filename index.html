@@ -120,6 +120,39 @@
   #buildBtns { position: absolute; right: calc(110px + var(--sr)); bottom: calc(262px + var(--sb)); display: flex; gap: 8px; pointer-events: none; }
   #buildBtns .tbtn { position: static; width: 56px; height: 56px; border-radius: 12px; font-size: 12px; }
 
+
+  /* Lobby */
+  #lobby { position: fixed; inset: 0; pointer-events: none; }
+  #lobby > * { pointer-events: auto; }
+  #lobbyTitle { position: absolute; left: calc(24px + var(--sl)); top: calc(18px + var(--st)); pointer-events: none; }
+  #lobbyTitle h1 { margin: 0; font-size: 40px; font-style: italic; font-weight: 900; color: var(--accent); letter-spacing: 1px; text-shadow: 0 3px 0 #b8860b, 0 6px 14px rgba(0,0,0,.45); }
+  #lobbyTitle span { font-weight: 900; letter-spacing: 6px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  .lpanel { position: absolute; left: calc(24px + var(--sl)); top: calc(110px + var(--st)); bottom: calc(24px + var(--sb)); width: min(380px, 44vw); overflow-y: auto; touch-action: pan-y;
+    background: rgba(15,22,48,.78); border: 1px solid var(--ui-border); border-radius: 16px; padding: 16px 18px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .lpanel label { display: block; font-weight: 800; font-size: 14px; margin: 12px 0 6px; opacity: .95; }
+  .lpanel label:first-child { margin-top: 0; }
+  .lpanel input[type=text], #lobbyName { width: 100%; box-sizing: border-box; font: inherit; font-size: 17px; font-weight: 700; padding: 9px 12px; border-radius: 10px; border: 2px solid var(--ui-border); background: rgba(0,0,0,.35); color: #fff; -webkit-user-select: text; user-select: text; }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .seg button { font: inherit; font-weight: 800; font-size: 14px; padding: 10px 4px; border-radius: 10px; border: 2px solid var(--ui-border); background: rgba(255,255,255,.08); color: #fff; touch-action: manipulation; }
+  .seg button.on { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .seg button[data-v="leicht"].on { background: #6fe06f; border-color: #6fe06f; }
+  .seg button[data-v="schwer"].on { background: #ff6b5a; border-color: #ff6b5a; }
+  .seg button[data-v="gemischt"].on { background: #b04fff; border-color: #b04fff; color: #fff; }
+  .hint { font-size: 12.5px; opacity: .85; margin: 6px 0 0; min-height: 32px; }
+  #botCount { width: 100%; }
+  #skinRow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skin { width: 46px; height: 46px; border-radius: 12px; border: 3px solid rgba(255,255,255,.3); touch-action: manipulation; }
+  .skin.on { border-color: #fff; box-shadow: 0 0 12px rgba(255,255,255,.7); transform: scale(1.08); }
+  #lobbyStats { margin-top: 16px; font-size: 13px; opacity: .8; font-weight: 700; }
+  #lobbyRight { position: absolute; right: calc(28px + var(--sr)); bottom: calc(28px + var(--sb)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  #lobbyRight button { font: inherit; font-weight: 900; border: 0; border-radius: 14px; touch-action: manipulation; }
+  #lobbyRight #btnStart { font-size: 34px; font-style: italic; padding: 18px 58px; background: var(--accent); color: #1a1a1a; box-shadow: 0 5px 0 #b8860b, 0 10px 24px rgba(0,0,0,.4); letter-spacing: 1px; }
+  #btnStart:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8860b; }
+  #lobbyRight #btnHelp { font-size: 15px; padding: 10px 20px; background: rgba(15,22,48,.8); color: #fff; border: 1px solid var(--ui-border) !important; }
+  #loadingText { margin: 0; font-weight: 800; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  #matchmaking { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); background: rgba(15,22,48,.85); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 26px; display: flex; align-items: center; gap: 16px; font-weight: 900; font-size: 20px; }
+  #matchmaking b { font-size: 34px; color: var(--accent); }
+
   /* Menüs */
   .screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 12, 26, .55); }
   .panel { background: rgba(23,32,61,.94); border: 1px solid var(--ui-border); border-radius: 16px; padding: 22px 26px; width: min(580px, 92vw); max-height: 88vh; overflow-y: auto; touch-action: pan-y; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
@@ -215,10 +248,34 @@
 
 <div id="bigMap" class="hidden"><canvas id="bigMapCanvas" width="640" height="640"></canvas></div>
 
-<div id="startScreen" class="screen">
+<div id="lobby">
+  <div id="lobbyTitle"><h1>FORTNITE AUF TEMU</h1><span>LOBBY</span></div>
+  <div id="lobbyPanel" class="lpanel">
+    <label>Name</label>
+    <input id="lobbyName" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Dein Name">
+    <label>Bot-Stärke</label>
+    <div class="seg" id="diffSeg">
+      <button data-v="leicht">Leicht</button><button data-v="mittel">Mittel</button><button data-v="schwer">Schwer</button><button data-v="gemischt">Gemischt</button>
+    </div>
+    <p class="hint" id="diffHint"></p>
+    <label>Gegner: <b id="botCountVal">24</b></label>
+    <input type="range" id="botCount" min="1" max="24" step="1">
+    <label>Outfit: <b id="skinName"></b></label>
+    <div id="skinRow"></div>
+    <div id="lobbyStats"></div>
+  </div>
+  <div id="lobbyRight">
+    <p id="loadingText">Insel wird erzeugt …</p>
+    <button id="btnStart" class="hidden">SPIELEN</button>
+    <button id="btnHelp" class="secondary">Steuerung</button>
+  </div>
+  <div id="matchmaking" class="hidden"><span>Spiel wird gesucht …</span><b id="mmCount">3</b></div>
+</div>
+
+<div id="helpPanel" class="screen hidden">
   <div class="panel">
-    <h1>FORTNITE AUF TEMU</h1>
-    <p>25 Spieler, ein Battle Bus, eine Insel. Spring ab, finde Truhen und Waffen, bleib im Kreis und hol dir den Victory Royale! Läuft komplett offline.</p>
+    <h2>Steuerung</h2>
+    <p>Spring aus dem Battle Bus, finde Truhen und Waffen, bleib im Kreis und hol dir den Victory Royale! Läuft komplett offline.</p>
     <div class="controls" id="controlsKeyboard">
       <b>WASD</b><span>Laufen (Shift = Sprinten)</span>
       <b>Maus</b><span>Umsehen · Links = Schießen · Rechts = Zielen</span>
@@ -236,8 +293,7 @@
       <b>Feuer</b><span>Schießen – beim Halten ziehen zum Zielen</span>
       <b>Hotbar</b><span>Unten antippen zum Wechseln · Minikarte antippen = große Karte</span>
     </div>
-    <p id="loadingText">Insel wird erzeugt …</p>
-    <button id="btnStart" class="hidden">Spielen</button>
+    <button id="btnHelpClose">Alles klar</button>
   </div>
 </div>
 
@@ -252,7 +308,7 @@
     <div class="row"><span>Automatisch sprinten</span><select id="optSprint"><option value="1">Ja</option><option value="0">Nein</option></select></div>
     <button id="btnResume">Weiter</button>
     <button id="btnFullscreen" class="secondary">Vollbild</button>
-    <button id="btnQuit" class="secondary">Neue Runde</button>
+    <button id="btnQuit" class="secondary">Zur Lobby</button>
   </div>
 </div>
 
@@ -261,12 +317,12 @@
     <div id="endTitle"></div>
     <p id="endText"></p>
     <p id="endKills"></p>
-    <button id="btnAgain">Nochmal spielen</button>
+    <button id="btnAgain">Zurück zur Lobby</button>
     <button id="btnWatch" class="secondary">Zuschauen</button>
   </div>
 </div>
 
-<div id="spectateBar" class="hidden"><span id="spectateText"></span><button id="btnAgain2">Nochmal spielen</button></div>
+<div id="spectateBar" class="hidden"><span id="spectateText"></span><button id="btnAgain2">Zur Lobby</button></div>
 
 <div id="rotateHint">📱↻ Bitte das iPad quer halten</div>
 
@@ -405,9 +461,9 @@ const CONFIG = {
     thinkRate: 5, sightRange: 85, sightChecks: 3, fov: 1.9,
     lootRange: 110, wanderRange: 70, reachDistance: 1.8,
     difficulties: {
-      leicht:  { weight: 40, aimError: 0.075, reaction: 0.65, buildChance: 0.15 },
-      mittel:  { weight: 40, aimError: 0.045, reaction: 0.4,  buildChance: 0.3 },
-      schwer:  { weight: 20, aimError: 0.024, reaction: 0.25, buildChance: 0.5 },
+      leicht:  { weight: 40, aimError: 0.11,  reaction: 0.9,  buildChance: 0.1 },
+      mittel:  { weight: 40, aimError: 0.05,  reaction: 0.45, buildChance: 0.3 },
+      schwer:  { weight: 20, aimError: 0.022, reaction: 0.22, buildChance: 0.55 },
     },
     healThreshold: 60, strafeTime: [0.6, 1.6],
     names: ['Lukas', 'Mia', 'Finn', 'Emma', 'Ben', 'Lena', 'Paul', 'Hanna', 'Jonas', 'Lea', 'Elias', 'Marie', 'Noah', 'Sophie', 'Leon', 'Clara', 'Felix', 'Ida', 'Max', 'Nele', 'Tim', 'Lina', 'Theo', 'Frieda', 'Oskar', 'Greta'],
@@ -3286,7 +3342,7 @@ function renderBus(alpha) {
 // Bots: KI denkt max. 5×/s, Steuerung + Zielen laufen jeden Tick
 // ---------------------------------------------------------------------
 const PREF_RANGE = { pistol: 16, smg: 11, ar: 26, shotgun: 5, sniper: 60 };
-const TURN_RATE = { leicht: 3.2, mittel: 4.5, schwer: 6.5 };
+const TURN_RATE = { leicht: 2.4, mittel: 4.5, schwer: 7 };
 
 function createBotAI() {
   const dk = weightedKey(CONFIG.bots.difficulties, 'weight');
@@ -3651,7 +3707,7 @@ function lookDelta(dx, dy, sens) {
 }
 
 window.addEventListener('keydown', (e) => {
-  if (['F3', 'Tab', 'Space', 'KeyM'].includes(e.code)) e.preventDefault();
+  if (gameState === 'playing' && ['F3', 'Tab', 'Space', 'KeyM'].includes(e.code)) e.preventDefault();
   if (gameState !== 'playing') {
     if (gameState === 'paused' && e.code === 'KeyP') resumeGame();
     return;
@@ -3761,7 +3817,7 @@ document.querySelectorAll('[data-btn]').forEach(bindButton);
 // iOS: Zoom-/Scroll-Gesten unterdrücken
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault());
-document.addEventListener('touchmove', (e) => { if (!e.target.closest || !e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', (e) => { if (!e.target.closest || !e.target.closest('.panel, .lpanel, input')) e.preventDefault(); }, { passive: false });
 
 // ---------------------------------------------------------------------
 // Eingabe pro Tick in Befehle für den Spieler übersetzen
@@ -4110,12 +4166,13 @@ function showEndScreen(victory) {
   if (endShown) return;
   endShown = true;
   gameState = 'ended';
+  recordMatchStats(victory);
   if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   $('endTitle').textContent = victory ? '#1 VICTORY ROYALE' : 'Platz #' + player.placement;
   $('endTitle').classList.toggle('win', victory);
   const killer = player.lastAttacker;
   $('endText').textContent = victory
-    ? 'Du hast alle ' + (CONFIG.match.players - 1) + ' Gegner überlebt!'
+    ? 'Du hast alle ' + (actors.length - 1) + ' Gegner überlebt!'
     : (killer && killer !== player ? 'Eliminiert von ' + killer.name : 'Du wurdest eliminiert');
   $('endKills').textContent = 'Eliminierungen: ' + player.kills;
   $('endScreen').classList.remove('hidden');
@@ -4246,6 +4303,174 @@ function updateDebugText(dt) {
     'Pools      Partikel ' + particles.used + '/' + CONFIG.effects.poolSize + ', Tracer ' + tracers.used + '/' + CONFIG.effects.tracerPool + '\n' +
     'Figuren    ' + aliveActors() + ' leben\n' +
     'Szene      ' + scene.children.length + ' Objekte, ' + renderer.info.render.calls + ' Draw Calls';
+}
+
+// ===== 95-lobby.js =====
+// ---------------------------------------------------------------------
+// Lobby: Figur auf einer Plattform im Himmel, Einstellungen für die Runde
+// ---------------------------------------------------------------------
+const SKINS = [
+  { name: 'Blauer Blitz', outfit: { skin: 0xf1c9a5, shirt: 0x2f6fd6, pants: 0x2b2f3a, hair: 0x3b2a1a, pack: 0xffd23f } },
+  { name: 'Feuerfuchs', outfit: { skin: 0xf5d7bd, shirt: 0xff6a2b, pants: 0x3a2a22, hair: 0xc9501a, pack: 0x2b2f3a } },
+  { name: 'Dschungel', outfit: { skin: 0xc68c63, shirt: 0x3f8f3a, pants: 0x4a5a2a, hair: 0x1a1a1a, pack: 0x8a5a33 } },
+  { name: 'Nachtschatten', outfit: { skin: 0xe0ac86, shirt: 0x2a2340, pants: 0x14121f, hair: 0x5a3b8a, pack: 0x9b59d9 } },
+  { name: 'Goldjunge', outfit: { skin: 0x8d5a3b, shirt: 0xffc93c, pants: 0xf4f1ea, hair: 0x1a1a1a, pack: 0xffffff } },
+  { name: 'Zuckerwatte', outfit: { skin: 0xf1c9a5, shirt: 0xff8fc8, pants: 0x8fd8ff, hair: 0xffe14d, pack: 0xb28dff } },
+];
+const DIFF_HINTS = {
+  leicht: 'Bots zielen schlecht und reagieren langsam – gut zum Üben.',
+  mittel: 'Ausgeglichen: Bots treffen ordentlich und bauen manchmal.',
+  schwer: 'Bots zielen genau, reagieren schnell und bauen oft Deckung.',
+  gemischt: 'Jeder Bot bekommt zufällig eine Stärke – wie in einer echten Runde.',
+};
+const LOBBY_POS = new THREE.Vector3(0, 460, 0);
+
+const lobby = {
+  difficulty: 'mittel', bots: CONFIG.match.players - 1, skin: 0, name: 'Du',
+  stats: { games: 0, wins: 0, kills: 0 },
+  stage: null, ring: null, t: 0, searching: false,
+};
+try { Object.assign(lobby, JSON.parse(localStorage.getItem('fat-lobby') || '{}')); } catch (e) { /* ohne Speicher weiter */ }
+lobby.searching = false;
+function saveLobby() {
+  try {
+    localStorage.setItem('fat-lobby', JSON.stringify({ difficulty: lobby.difficulty, bots: lobby.bots, skin: lobby.skin, name: lobby.name, stats: lobby.stats }));
+  } catch (e) { /* ohne Speicher weiter */ }
+}
+
+function buildLobbyStage() {
+  const g = new THREE.Group();
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.6, 0.6, 32), texMat('stone', 0xd8dde6));
+  top.position.y = -0.3; top.receiveShadow = true;
+  g.add(top);
+  const under = new THREE.Mesh(new THREE.ConeGeometry(3.6, 3.5, 32), texMat('stone', 0x9aa3b5));
+  under.position.y = -2.35; under.rotation.x = Math.PI;
+  g.add(under);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.25, 0.08, 8, 48), glowMat(0x3fa9ff, 0.9));
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.02;
+  g.add(ring);
+  const beam = new THREE.Mesh(beamGeo, glowMat(0x3fa9ff, 0.12));
+  beam.scale.set(8, 1.2, 8); beam.position.y = -6;
+  g.add(beam);
+  g.position.copy(LOBBY_POS);
+  scene.add(g);
+  lobby.stage = g; lobby.ring = ring;
+}
+
+function applySkin(idx) {
+  lobby.skin = (idx + SKINS.length) % SKINS.length;
+  if (!player) return;
+  scene.remove(player.model.group);
+  player.model = createCharacterMesh(SKINS[lobby.skin].outfit);
+  scene.add(player.model.group);
+}
+
+// Figur und Kamera in der Lobby
+function renderLobby(dt) {
+  lobby.t += dt;
+  const m = player.model, g = m.group;
+  g.visible = true;
+  g.position.copy(LOBBY_POS);
+  g.rotation.set(0, Math.PI - 0.35 + Math.sin(lobby.t * 0.5) * 0.3, 0);
+  g.scale.set(1, 1, 1);
+  m.glider.visible = false;
+  updateHeldModel(player);
+  const breath = Math.sin(lobby.t * 2.2);
+  m.hip.rotation.x = 0; m.hip.position.y = 0.9 + breath * 0.01;
+  m.torso.rotation.x = breath * 0.02;
+  m.head.rotation.set(0, Math.sin(lobby.t * 0.7) * 0.25, 0);
+  m.legL.rotation.x = 0; m.legR.rotation.x = 0;
+  m.armL.rotation.set(0.1, 0, -0.18 - breath * 0.03);
+  m.armR.rotation.set(0.6, 0, 0.15);
+  lobby.ring.material.opacity = 0.6 + Math.sin(lobby.t * 3) * 0.3;
+  // Figur rechts im Bild, Einstellungen links
+  camera.position.set(LOBBY_POS.x - 1.2, LOBBY_POS.y + 1.4, LOBBY_POS.z + 3.7);
+  camera.lookAt(LOBBY_POS.x - 1.45, LOBBY_POS.y + 1.0, LOBBY_POS.z);
+  if (Math.abs(camera.fov - CONFIG.render.fov) > 0.01) { camera.fov = CONFIG.render.fov; camera.updateProjectionMatrix(); }
+  sky.position.copy(camera.position);
+  sun.position.set(LOBBY_POS.x + SUN_DIR.x * 50, LOBBY_POS.y + SUN_DIR.y * 50, LOBBY_POS.z + SUN_DIR.z * 50);
+  sun.target.position.copy(LOBBY_POS);
+  if (cloudGroup) cloudGroup.rotation.y += dt * 0.01;
+  renderer.render(scene, camera);
+}
+
+function refreshLobbyUI() {
+  document.querySelectorAll('#diffSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === lobby.difficulty));
+  $('diffHint').textContent = DIFF_HINTS[lobby.difficulty];
+  $('botCount').value = lobby.bots;
+  $('botCountVal').textContent = lobby.bots;
+  $('skinName').textContent = SKINS[lobby.skin].name;
+  document.querySelectorAll('#skinRow .skin').forEach((el, i) => el.classList.toggle('on', i === lobby.skin));
+  $('lobbyName').value = lobby.name;
+  const s = lobby.stats;
+  $('lobbyStats').textContent = 'Spiele ' + s.games + '  ·  Siege ' + s.wins + '  ·  Eliminierungen ' + s.kills;
+}
+
+function setupLobbyUI() {
+  document.querySelectorAll('#diffSeg button').forEach((b) => b.addEventListener('click', () => { lobby.difficulty = b.dataset.v; saveLobby(); refreshLobbyUI(); sfx('pickup'); }));
+  $('botCount').max = CONFIG.match.players - 1;
+  $('botCount').addEventListener('input', (e) => { lobby.bots = parseInt(e.target.value, 10); saveLobby(); refreshLobbyUI(); });
+  const row = $('skinRow');
+  SKINS.forEach((sk, i) => {
+    const el = document.createElement('button');
+    el.className = 'skin';
+    el.title = sk.name;
+    el.style.background = 'linear-gradient(135deg, ' + hexCss(sk.outfit.shirt) + ' 55%, ' + hexCss(sk.outfit.pack) + ' 55%)';
+    el.addEventListener('click', () => { applySkin(i); saveLobby(); refreshLobbyUI(); sfx('pickup'); });
+    row.appendChild(el);
+  });
+  $('lobbyName').addEventListener('input', (e) => { lobby.name = e.target.value.trim().slice(0, 14); saveLobby(); });
+  $('btnHelp').addEventListener('click', () => $('helpPanel').classList.remove('hidden'));
+  $('btnHelpClose').addEventListener('click', () => $('helpPanel').classList.add('hidden'));
+  $('btnStart').addEventListener('click', beginMatchmaking);
+  refreshLobbyUI();
+}
+
+// „Spiel wird gesucht“ – kurzer Countdown, dann geht der Bus los
+function beginMatchmaking() {
+  if (lobby.searching) return;
+  lobby.searching = true;
+  initAudio();
+  $('lobbyName').blur();
+  $('btnStart').classList.add('hidden');
+  $('matchmaking').classList.remove('hidden');
+  let n = 3;
+  $('mmCount').textContent = n;
+  sfx('pickup');
+  const step = () => {
+    n--;
+    if (n <= 0) { $('lobby').classList.add('hidden'); startGame(); return; }
+    $('mmCount').textContent = n;
+    sfx('pickup');
+    setTimeout(step, 1000);
+  };
+  setTimeout(step, 1000);
+}
+
+// Einstellungen aus der Lobby auf die Runde anwenden
+function applyLobbySettings() {
+  player.name = lobby.name || 'Du';
+  const bots = actors.filter((a) => a.ai);
+  for (let i = lobby.bots; i < bots.length; i++) {
+    const a = bots[i];
+    scene.remove(a.model.group);
+    grid.remove(a.collider);
+    actors.splice(actors.indexOf(a), 1);
+  }
+  for (const a of actors) {
+    if (!a.ai) continue;
+    const dk = lobby.difficulty === 'gemischt' ? weightedKey(CONFIG.bots.difficulties, 'weight') : lobby.difficulty;
+    const d = CONFIG.bots.difficulties[dk];
+    a.ai.diff = dk; a.ai.aimError = d.aimError; a.ai.reaction = d.reaction; a.ai.buildChance = d.buildChance;
+  }
+  if (lobby.stage) lobby.stage.visible = false;
+}
+
+function recordMatchStats(victory) {
+  lobby.stats.games++;
+  if (victory) lobby.stats.wins++;
+  lobby.stats.kills += player.kills;
+  saveLobby();
 }
 
 // ===== 99-main.js =====
@@ -4455,14 +4680,8 @@ const _camTarget = new THREE.Vector3();
 let lastFrameDt = 0;
 function render(alpha, dt) {
   lastFrameDt = dt;
-  if (gameState === 'start') {
-    // Startbildschirm: Kamera kreist langsam über der Insel
-    const t = performance.now() * 0.00004;
-    camera.position.set(Math.cos(t) * 300, 110, Math.sin(t) * 300);
-    camera.lookAt(0, 5, 0);
-    sky.position.copy(camera.position);
-    if (cloudGroup) cloudGroup.rotation.y += dt * 0.004;
-    renderer.render(scene, camera);
+  if (gameState === 'start' || gameState === 'loading') {
+    if (player && lobby.stage) renderLobby(dt);
     return;
   }
   if (player) {
@@ -4578,7 +4797,9 @@ function startMatch() {
 
 function startGame() {
   initAudio();
-  $('startScreen').classList.add('hidden');
+  $('lobby').classList.add('hidden');
+  $('helpPanel').classList.add('hidden');
+  applyLobbySettings();
   $('hud').classList.remove('hidden');
   gameState = 'playing';
   lastTime = performance.now(); accumulator = 0;
@@ -4605,7 +4826,6 @@ function resumeGame() {
   if (!touchEnabled() && document.body.requestPointerLock) document.body.requestPointerLock();
 }
 
-$('btnStart').addEventListener('click', startGame);
 $('btnResume').addEventListener('click', resumeGame);
 $('btnQuit').addEventListener('click', () => location.reload());
 $('btnAgain').addEventListener('click', () => location.reload());
@@ -4641,16 +4861,18 @@ function init() {
   buildWorld();
   buildMapBase();
   populateLoot();
-  player = createActor({ name: 'Du', isPlayer: true, outfit: { skin: 0xf1c9a5, shirt: 0x2f6fd6, pants: 0x2b2f3a, hair: 0x3b2a1a, pack: 0xffd23f } });
+  lobby.skin = clamp(lobby.skin | 0, 0, SKINS.length - 1);
+  lobby.bots = clamp(lobby.bots | 0, 1, CONFIG.match.players - 1);
+  if (!DIFF_HINTS[lobby.difficulty]) lobby.difficulty = 'mittel';
+  player = createActor({ name: lobby.name || 'Du', isPlayer: true, outfit: SKINS[lobby.skin].outfit });
   initBots(CONFIG.match.players - 1);
-  // Vorschau hinter dem Startbildschirm: Blick über die Insel
-  player.pos.set(0, 60, 180); player.prev.copy(player.pos);
-  player.yaw = 0; player.pitch = -0.25; player.phase = 'freefall';
+  buildLobbyStage();
+  setupLobbyUI();
+  player.yaw = 0; player.pitch = -0.25;
   applyQuality();
   refreshHud();
-  computeRig(player.pos, player.height, player.yaw, player.pitch, rig, 'air', null);
-  camera.position.set(rig.cx, rig.cy, rig.cz);
-  camera.lookAt(rig.cx + rig.fx, rig.cy + rig.fy, rig.cz + rig.fz);
+  camera.position.set(0, 110, 300);
+  camera.lookAt(0, 5, 0);
   renderer.compile(scene, camera);
   player.phase = 'bus';
   gameState = 'start';
@@ -4665,7 +4887,8 @@ window.__game = {
   tick: (n) => { for (let i = 0; i < n; i++) tick(TICK); },
   getHeight, raycastWorld, worldHit, evaluatePlacement, placePart, destroyPart, computeBuildTarget,
   makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
-  get player() { return player; }, get state() { return gameState; }, collapseQueue,
+  get player() { return player; }, get state() { return gameState; }, collapseQueue, lobby,
+  startNow: () => { $('lobby').classList.add('hidden'); startGame(); },
 };
 
 setTimeout(init, 30);

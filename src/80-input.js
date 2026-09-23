@@ -31,7 +31,7 @@ function lookDelta(dx, dy, sens) {
 }
 
 window.addEventListener('keydown', (e) => {
-  if (['F3', 'Tab', 'Space', 'KeyM'].includes(e.code)) e.preventDefault();
+  if (gameState === 'playing' && ['F3', 'Tab', 'Space', 'KeyM'].includes(e.code)) e.preventDefault();
   if (gameState !== 'playing') {
     if (gameState === 'paused' && e.code === 'KeyP') resumeGame();
     return;
@@ -141,7 +141,7 @@ document.querySelectorAll('[data-btn]').forEach(bindButton);
 // iOS: Zoom-/Scroll-Gesten unterdrücken
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault());
-document.addEventListener('touchmove', (e) => { if (!e.target.closest || !e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', (e) => { if (!e.target.closest || !e.target.closest('.panel, .lpanel, input')) e.preventDefault(); }, { passive: false });
 
 // ---------------------------------------------------------------------
 // Eingabe pro Tick in Befehle für den Spieler übersetzen
