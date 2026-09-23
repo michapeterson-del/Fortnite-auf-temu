@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fortnite Temu">
+<meta name="theme-color" content="#1b2440">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Fortnite auf Temu</title>
+<style>
+  :root { --ui: rgba(10, 16, 32, 0.62); --ui-border: rgba(255,255,255,0.22); --accent: #ffd23f; --accent2: #3fa9ff; --bad: #ff4d4d; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1326; color: #fff;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+    touch-action: none; overscroll-behavior: none; }
+  canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #touchLayer { position: fixed; inset: 0; touch-action: none; }
+  .hidden { display: none !important; }
+
+  /* HUD */
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px #000; }
+  #crosshair::before { left: 10px; top: 2px; width: 2px; height: 18px; }
+  #crosshair::after { top: 10px; left: 2px; height: 2px; width: 18px; }
+  #modeLabel { position: absolute; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: var(--ui); border: 1px solid var(--ui-border); border-radius: 10px; padding: 6px 14px; font-weight: 700; letter-spacing: .5px; font-size: 15px; }
+  #slots { position: absolute; left: 50%; bottom: calc(58px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 6px; }
+  #slots .slot { width: 58px; height: 46px; background: var(--ui); border: 2px solid var(--ui-border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; }
+  #slots .slot b { font-size: 16px; }
+  #slots .slot.active { border-color: var(--accent); box-shadow: 0 0 10px rgba(255,210,63,.6); }
+  #targetInfo { position: absolute; left: 50%; top: calc(50% + 26px); transform: translateX(-50%); width: 120px; text-align: center; font-size: 12px; text-shadow: 0 1px 2px #000; }
+  #targetInfo .bar { height: 6px; background: rgba(0,0,0,.5); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  #targetInfo .fill { height: 100%; background: #6fe06f; width: 100%; }
+  #debug { position: absolute; left: calc(8px + env(safe-area-inset-left)); top: calc(8px + env(safe-area-inset-top)); background: rgba(0,0,0,.6); padding: 8px 10px; border-radius: 6px;
+    font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; white-space: pre; }
+  #toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); background: var(--ui); border-radius: 8px; padding: 6px 14px; font-weight: 600; opacity: 0; transition: opacity .25s; }
+  #toast.show { opacity: 1; }
+  #dmgLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .dmg { position: absolute; left: 0; top: 0; font-weight: 900; font-size: 20px; color: #fff; text-shadow: 0 0 3px #000, 0 2px 2px #000; will-change: transform, opacity; }
+  .dmg.head { color: var(--accent); font-size: 24px; }
+
+  /* Touch-Steuerung */
+  #touchUI { position: fixed; inset: 0; pointer-events: none; }
+  #joyBase { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); left: 130px; top: 70%; }
+  #joyKnob { position: absolute; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255,255,255,.55); left: 60px; top: 60px; }
+  .tbtn { position: absolute; pointer-events: auto; touch-action: none; border-radius: 50%; background: var(--ui); border: 2px solid var(--ui-border);
+    color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .tbtn.on { border-color: var(--accent); background: rgba(255,210,63,.35); }
+  .tbtn.down { transform: scale(.92); background: rgba(255,255,255,.3); }
+  #btnAction { width: 92px; height: 92px; right: calc(34px + env(safe-area-inset-right)); bottom: calc(120px + env(safe-area-inset-bottom)); font-size: 15px; }
+  #btnJump { width: 74px; height: 74px; right: calc(140px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); }
+  #btnCrouch { width: 62px; height: 62px; right: calc(34px + env(safe-area-inset-right)); bottom: calc(36px + env(safe-area-inset-bottom)); }
+  #btnBuild { width: 66px; height: 66px; right: calc(140px + env(safe-area-inset-right)); bottom: calc(132px + env(safe-area-inset-bottom)); }
+  #btnMenu { width: 48px; height: 48px; right: calc(14px + env(safe-area-inset-right)); top: calc(14px + env(safe-area-inset-top)); font-size: 20px; }
+  #btnDebug { width: 48px; height: 48px; right: calc(72px + env(safe-area-inset-right)); top: calc(14px + env(safe-area-inset-top)); font-size: 12px; }
+  #buildBtns { position: absolute; right: calc(34px + env(safe-area-inset-right)); bottom: calc(230px + env(safe-area-inset-bottom)); display: flex; gap: 8px; pointer-events: none; }
+  #buildBtns .tbtn { position: static; width: 58px; height: 58px; border-radius: 12px; font-size: 12px; }
+
+  /* Menüs */
+  .screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 12, 26, .78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .panel { background: #17203d; border: 1px solid var(--ui-border); border-radius: 16px; padding: 22px 26px; width: min(560px, 92vw); max-height: 88vh; overflow-y: auto; touch-action: pan-y; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+  .panel h1 { margin: 0 0 4px; font-size: 30px; color: var(--accent); letter-spacing: 1px; }
+  .panel h2 { margin: 0 0 12px; font-size: 22px; }
+  .panel p { margin: 6px 0; opacity: .9; font-size: 14px; }
+  .panel .controls { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 13px; margin: 12px 0; }
+  .panel .controls b { color: var(--accent); }
+  .panel button { font: inherit; font-weight: 800; font-size: 17px; border: 0; border-radius: 10px; padding: 12px 22px; margin: 6px 6px 0 0; cursor: pointer; background: var(--accent); color: #1a1a1a; touch-action: manipulation; }
+  .panel button.secondary { background: #2d3a66; color: #fff; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; font-size: 14px; }
+  .row input[type=range] { width: 55%; }
+  .row select { font: inherit; padding: 6px; border-radius: 6px; }
+  #rotateHint { position: fixed; inset: 0; background: #0d1326; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 20px; padding: 30px; z-index: 50; }
+  @media (orientation: landscape) { #rotateHint { display: none; } }
+  @media (orientation: portrait) and (pointer: fine) { #rotateHint { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="touchLayer"></div>
+
+<div id="hud">
+  <div id="crosshair"></div>
+  <div id="targetInfo" class="hidden"><span id="targetLabel"></span><div class="bar"><div class="fill" id="targetFill"></div></div></div>
+  <div id="slots">
+    <div class="slot" data-slot="wall"><b>1</b>Wand</div>
+    <div class="slot" data-slot="floor"><b>2</b>Boden</div>
+    <div class="slot" data-slot="ramp"><b>3</b>Rampe</div>
+    <div class="slot" data-slot="roof"><b>4</b>Dach</div>
+  </div>
+  <div id="modeLabel">Kampf – Spitzhacke</div>
+  <div id="debug" class="hidden"></div>
+  <div id="toast"></div>
+</div>
+<div id="dmgLayer"></div>
+
+<div id="touchUI" class="hidden">
+  <div id="joyBase" class="hidden"><div id="joyKnob"></div></div>
+  <div class="tbtn" id="btnAction" data-btn="action">Hacken</div>
+  <div class="tbtn" id="btnJump" data-btn="jump">Sprung</div>
+  <div class="tbtn" id="btnCrouch" data-btn="crouch">Ducken</div>
+  <div class="tbtn" id="btnBuild" data-btn="build">Bauen</div>
+  <div class="tbtn" id="btnMenu" data-btn="menu">☰</div>
+  <div class="tbtn" id="btnDebug" data-btn="debug">F3</div>
+  <div id="buildBtns" class="hidden">
+    <div class="tbtn" data-btn="wall">Wand</div>
+    <div class="tbtn" data-btn="floor">Boden</div>
+    <div class="tbtn" data-btn="ramp">Rampe</div>
+    <div class="tbtn" data-btn="roof">Dach</div>
+  </div>
+</div>
+
+<div id="startScreen" class="screen">
+  <div class="panel">
+    <h1>FORTNITE AUF TEMU</h1>
+    <p>Phase 1 – Insel, Bewegung, eigene Kollision und Bauen. Läuft komplett offline.</p>
+    <div class="controls" id="controlsKeyboard">
+      <b>WASD</b><span>Laufen</span>
+      <b>Maus</b><span>Umsehen</span>
+      <b>Leertaste</b><span>Springen</span>
+      <b>Shift</b><span>Sprinten</span>
+      <b>C / Strg</b><span>Ducken</span>
+      <b>Q</b><span>Bau-Modus an/aus</span>
+      <b>1–4 / Mausrad</b><span>Wand, Boden, Rampe, Dach</span>
+      <b>Linksklick</b><span>Bauen / Spitzhacke (halten = Dauerfeuer)</span>
+      <b>F3</b><span>Debug-Anzeige</span>
+      <b>Esc / P</b><span>Pause</span>
+    </div>
+    <div class="controls" id="controlsTouch">
+      <b>Linke Seite</b><span>Joystick – ganz rausziehen = Sprinten</span>
+      <b>Rechte Seite</b><span>Wischen = Umsehen</span>
+      <b>Hacken/Bauen</b><span>Großer Knopf, halten = Dauerbauen</span>
+    </div>
+    <p id="loadingText">Insel wird erzeugt …</p>
+    <button id="btnStart" class="hidden">Spielen</button>
+  </div>
+</div>
+
+<div id="pauseMenu" class="screen hidden">
+  <div class="panel">
+    <h2>Pause</h2>
+    <div class="row"><span>Empfindlichkeit</span><input type="range" id="optSens" min="0.3" max="2.5" step="0.05"></div>
+    <div class="row"><span>Grafik</span>
+      <select id="optQuality"><option value="niedrig">Niedrig (schnell)</option><option value="mittel">Mittel</option><option value="hoch">Hoch (Schatten)</option></select></div>
+    <div class="row"><span>Touch-Steuerung</span><select id="optTouch"><option value="auto">Automatisch</option><option value="an">An</option><option value="aus">Aus</option></select></div>
+    <div class="row"><span>Y-Achse umkehren</span><select id="optInvert"><option value="0">Nein</option><option value="1">Ja</option></select></div>
+    <button id="btnResume">Weiter</button>
+    <button id="btnFullscreen" class="secondary">Vollbild</button>
+  </div>
+</div>
+
+<div id="rotateHint">📱↻ Bitte das iPad quer halten</div>
+
+<script>
+/*THREE_JS*/
+</script>
+<script>
+/*GAME_JS*/
+</script>
+</body>
+</html>
