@@ -75,7 +75,7 @@ function buildTerrainMesh() {
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.setIndex(new THREE.BufferAttribute(idx, 1));
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, map: TEX.detail }));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, map: TEX.detail, normalMap: normalFromTexture(TEX.detail, NORMAL_STRENGTH.detail) }));
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
   scene.add(mesh);

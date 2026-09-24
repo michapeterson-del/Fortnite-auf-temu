@@ -11,9 +11,16 @@ const game = "(function () {\n'use strict';\n" +
   modules.map((f) => '// ===== ' + f + ' =====\n' + readFileSync('src/' + f, 'utf8')).join('\n') +
   '\n})();\n';
 const tpl = readFileSync('src/template.html', 'utf8');
+// three.js-Erweiterungen (GLTFLoader, EXRLoader, SkeletonUtils) – erzeugt mit tools/build-addons.mjs
+const addons = readFileSync('vendor/three-addons.js', 'utf8');
+// Modelle und HDR-Himmel als Base64 einbetten (läuft komplett offline)
+const ASSET_FILES = { soldier: 'assets/soldier.glb', hdriPark: 'assets/hdri-park.exr', hdriDawn: 'assets/hdri-dawn.exr', hdriSunset: 'assets/hdri-sunset.exr' };
+const assetsJs = 'window.__ASSETS = {\n' + Object.entries(ASSET_FILES).map(([k, f]) => '  ' + k + ': "' + readFileSync(f).toString('base64') + '"').join(',\n') + '\n};';
 if (game.includes('</script')) throw new Error('Spielcode darf kein </script enthalten');
 const html = tpl
   .replace('/*THREE_JS*/', () => three)
+  .replace('/*ADDONS_JS*/', () => addons)
+  .replace('/*ASSETS_JS*/', () => assetsJs)
   .replace('/*GAME_JS*/', () => game);
 writeFileSync('index.html', html);
 

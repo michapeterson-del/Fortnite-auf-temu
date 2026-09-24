@@ -33,16 +33,69 @@ envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), new THREE.Shad
 })));
 // Die Env-Maps der drei Stimmungen werden beim Laden EINMAL berechnet
 // (Neuberechnen mitten im Spiel würde ruckeln) und dann nur umgeschaltet.
-const envMaps = [];
+const envMaps = [], skyEnvMaps = [];
+// Mit eingebetteten HDR-Fotos (Poly Haven) wird das echte Himmelslicht
+// genommen und so gedreht, dass die hellste Stelle (die Sonne im Foto)
+// dort liegt, wo auch unsere Sonne steht.
+const hdrUniforms = { map: { value: null }, rot: { value: 0 }, gain: { value: 1 }, sunDir: { value: SUN_DIR }, sunColor: { value: new THREE.Color() }, ground: { value: new THREE.Color(0x56683f) } };
+const hdrScene = new THREE.Scene();
+hdrScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 48, 24), new THREE.ShaderMaterial({
+  uniforms: hdrUniforms,
+  vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: [
+    'uniform sampler2D map; uniform float rot; uniform float gain; uniform vec3 sunDir; uniform vec3 sunColor; uniform vec3 ground; varying vec3 vDir;',
+    'void main(){ vec3 d = normalize(vDir);',
+    '  float u = atan(d.z, d.x) / 6.2831853 + 0.5 + rot; float v = asin(clamp(d.y, -1.0, 1.0)) / 3.14159265 + 0.5;',
+    '  vec3 c = texture2D(map, vec2(fract(u), v)).rgb * gain;',
+    '  c = min(c, vec3(8.0));',
+    '  if (d.y < 0.0) c = mix(c, ground * dot(c, vec3(0.3, 0.5, 0.2)) * 2.2, min(1.0, -d.y * 4.0));',
+    '  float s = max(dot(d, sunDir), 0.0); c += sunColor * pow(s, 64.0) * 6.0;',
+    '  gl_FragColor = vec4(c, 1.0); }',
+  ].join('\n'),
+  side: THREE.BackSide, depthWrite: false,
+})));
+// hellste Richtung und mittlere Helligkeit des oberen Halbraums eines HDR-Bilds
+function analyseHdr(t) {
+  const { data, width: w, height: h } = t.image;
+  const half = t.type === THREE.HalfFloatType, get = (i) => (half ? THREE.DataUtils.fromHalfFloat(data[i]) : data[i]);
+  const ch = data.length / (w * h);
+  let best = -1, bu = 0, sum = 0, n = 0;
+  for (let y = 0; y < h; y += 2) {
+    const v = y / h;
+    for (let x = 0; x < w; x += 2) {
+      const i = (y * w + x) * ch;
+      const l = get(i) * 0.3 + get(i + 1) * 0.5 + get(i + 2) * 0.2;
+      if (v > 0.5 === !t.flipY) { sum += Math.min(l, 4); n++; }
+      if (l > best) { best = l; bu = x / w; }
+    }
+  }
+  return { sunU: bu, mean: sum / Math.max(1, n) };
+}
 function prebuildEnvironments() {
   const gen = new THREE.PMREMGenerator(renderer);
-  for (const K of TOD_KEYS) {
+  const names = CONFIG.render.hdri;
+  TOD_KEYS.forEach((K, idx) => {
     envUniforms.top.value.setHex(K.top); envUniforms.horizon.value.setHex(K.horizon); envUniforms.sunColor.value.setHex(K.sun);
     const e = K.elev, az = K.azim;
     const dir = new THREE.Vector3(Math.cos(e) * Math.cos(az), Math.sin(e), Math.cos(e) * Math.sin(az)).normalize();
+    const hdr = ASSETS.hdr[names[idx]];
+    if (hdr) {
+      const info = hdr.userData.info || (hdr.userData.info = analyseHdr(hdr));
+      hdrUniforms.map.value = hdr;
+      // Foto-Sonne (u) auf unsere Sonnenrichtung drehen
+      const targetU = Math.atan2(dir.z, dir.x) / (Math.PI * 2) + 0.5;
+      hdrUniforms.rot.value = info.sunU - targetU;
+      hdrUniforms.gain.value = CONFIG.render.hdriBrightness / Math.max(0.05, info.mean);
+      hdrUniforms.sunDir.value = dir;
+      hdrUniforms.sunColor.value.setHex(K.sun).multiplyScalar(0.5);
+      envMaps.push(gen.fromScene(hdrScene, 0.02).texture);
+    }
+    // reiner Himmel (für Wasser-Spiegelungen: keine Bäume aus dem Foto im Meer)
     envUniforms.sunDir.value = dir;
-    envMaps.push(gen.fromScene(envScene, 0.02).texture);
-  }
+    const skyEnv = gen.fromScene(envScene, 0.02).texture;
+    skyEnvMaps.push(skyEnv);
+    if (!hdr) envMaps.push(skyEnv);
+  });
   envUniforms.sunDir.value = SUN_DIR;
   gen.dispose();
 }
@@ -51,6 +104,7 @@ function pickEnvironment(v) {
   let best = 0;
   for (let i = 1; i < TOD_KEYS.length; i++) if (Math.abs(TOD_KEYS[i].t - v) < Math.abs(TOD_KEYS[best].t - v)) best = i;
   if (scene.environment !== envMaps[best]) scene.environment = envMaps[best];
+  if (waterMesh && waterMesh.material.envMap !== skyEnvMaps[best]) { waterMesh.material.envMap = skyEnvMaps[best]; waterMesh.material.needsUpdate = true; }
 }
 
 // Tageszeit anwenden (0 = Nachmittag, 1 = Sonnenuntergang)

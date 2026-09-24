@@ -202,7 +202,12 @@ function characterGeometries(o) {
   return set;
 }
 
+// Echte Figur (Mixamo-Modell), wenn geladen – sonst Baukasten-Figur
 function createCharacterMesh(outfitIn) {
+  return ASSETS.soldier ? createRealCharacter(outfitIn) : createLegacyCharacter(outfitIn);
+}
+
+function createLegacyCharacter(outfitIn) {
   const o = fullOutfit(outfitIn);
   const G = characterGeometries(o);
   const g = new THREE.Group();
@@ -329,6 +334,7 @@ function applyPose(m, P, dt) {
 
 const _pose = { state: 'ground', speed: 0, phase: 0, air: false, crouch: false, action: 'pickaxe', pitch: 0, recoil: 0, swingT: 0, time: 0, deadT: 0, instant: false };
 function animateCharacter(a, pos, dt) {
+  if (a.model.real) { animateRealCharacter(a, pos, dt); return; }
   const m = a.model, g = m.group;
   if (a.phase === 'bus') { g.visible = false; return; }
   const P = _pose;
@@ -368,6 +374,7 @@ function animateCharacter(a, pos, dt) {
 
 // Lobby: ruhige Stehpose
 function animateLobbyCharacter(m, t, dt) {
+  if (m.real) { animateRealLobby(m, t, dt); return; }
   const P = _pose;
   P.state = 'ground'; P.speed = 0; P.air = false; P.crouch = false; P.action = 'pickaxe'; P.pitch = 0; P.recoil = 0; P.swingT = 0; P.time = t; P.instant = false;
   applyPose(m, P, dt);

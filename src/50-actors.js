@@ -138,7 +138,8 @@ function updateHeldModel(a) {
   const m = a.model;
   if (m.heldKey === key) return;
   if (m.held) m.hand.remove(m.held);
-  m.held = it ? itemModel(it, true) : pickaxeModel();
+  m.held = it ? itemModel(it, !m.real) : pickaxeModel();
+  if (m.real && !it) m.held.rotation.set(0, 0, 0);
   m.hand.add(m.held);
   m.heldKey = key;
 }

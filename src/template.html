@@ -262,6 +262,10 @@
     <div class="seg" id="todSeg">
       <button data-v="dynamisch">Ablauf</button><button data-v="mittag">Mittag</button><button data-v="abend">Abend</button><button data-v="sonnenuntergang">Sonnen&shy;untergang</button>
     </div>
+    <label>Grafik</label>
+    <div class="seg" id="gfxSeg">
+      <button data-v="niedrig">Niedrig</button><button data-v="mittel">Mittel</button><button data-v="hoch">Hoch</button><button data-v="ultra">Ultra</button>
+    </div>
     <label>Gegner: <b id="botCountVal">24</b></label>
     <input type="range" id="botCount" min="1" max="24" step="1">
     <label>Outfit: <b id="skinName"></b></label>
@@ -306,7 +310,7 @@
     <h2>Pause</h2>
     <div class="row"><span>Empfindlichkeit</span><input type="range" id="optSens" min="0.3" max="2.5" step="0.05"></div>
     <div class="row"><span>Grafik</span>
-      <select id="optQuality"><option value="niedrig">Niedrig (schnell)</option><option value="mittel">Mittel</option><option value="hoch">Hoch</option></select></div>
+      <select id="optQuality"><option value="niedrig">Niedrig (schnell)</option><option value="mittel">Mittel</option><option value="hoch">Hoch</option><option value="ultra">Ultra (SSAO + Sonnenstrahlen)</option></select></div>
     <div class="row"><span>Touch-Steuerung</span><select id="optTouch"><option value="auto">Automatisch</option><option value="an">An</option><option value="aus">Aus</option></select></div>
     <div class="row"><span>Y-Achse umkehren</span><select id="optInvert"><option value="0">Nein</option><option value="1">Ja</option></select></div>
     <div class="row"><span>Automatisch sprinten</span><select id="optSprint"><option value="1">Ja</option><option value="0">Nein</option></select></div>
@@ -332,6 +336,12 @@
 
 <script>
 /*THREE_JS*/
+</script>
+<script>
+/*ADDONS_JS*/
+</script>
+<script>
+/*ASSETS_JS*/
 </script>
 <script>
 /*GAME_JS*/

@@ -78,12 +78,14 @@ function renderLobby(dt) {
   sun.target.position.copy(LOBBY_POS);
   if (cloudGroup) cloudGroup.rotation.y += dt * 0.01;
   updateGrassField(0, 0, dt);
+  post.dof = 1; post.dofFocus = 2.4; post.dofRange = 2.5; // Porträt: Hintergrund unscharf
   renderFrame();
 }
 
 function refreshLobbyUI() {
   document.querySelectorAll('#diffSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === lobby.difficulty));
   document.querySelectorAll('#todSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === lobby.tod));
+  document.querySelectorAll('#gfxSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === settings.quality));
   $('diffHint').textContent = DIFF_HINTS[lobby.difficulty];
   $('botCount').value = lobby.bots;
   $('botCountVal').textContent = lobby.bots;
@@ -97,6 +99,9 @@ function refreshLobbyUI() {
 function setupLobbyUI() {
   document.querySelectorAll('#diffSeg button').forEach((b) => b.addEventListener('click', () => { lobby.difficulty = b.dataset.v; saveLobby(); refreshLobbyUI(); sfx('pickup'); }));
   document.querySelectorAll('#todSeg button').forEach((b) => b.addEventListener('click', () => { lobby.tod = b.dataset.v; setTodMode(lobby.tod); saveLobby(); refreshLobbyUI(); sfx('pickup'); }));
+  document.querySelectorAll('#gfxSeg button').forEach((b) => b.addEventListener('click', () => {
+    settings.quality = b.dataset.v; saveSettings(); applyQuality(); $('optQuality').value = settings.quality; refreshLobbyUI(); sfx('pickup');
+  }));
   $('botCount').max = CONFIG.match.players - 1;
   $('botCount').addEventListener('input', (e) => { lobby.bots = parseInt(e.target.value, 10); saveLobby(); refreshLobbyUI(); });
   const row = $('skinRow');

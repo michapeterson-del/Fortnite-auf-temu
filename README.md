@@ -14,6 +14,8 @@ Three.js ist direkt eingebettet, es wird nichts aus dem Internet nachgeladen.
 - **Sturm** in 5 Phasen mit Countdown, Schaden außerhalb, Minikarte und große Karte (M)
 - **Bauen** mit Holz (Spitzhacke an Bäumen, Steinen, Kisten), Einsturz mit Kettenreaktion
 - Killfeed, Trefferanzeige, Schadenszahlen, Fallschaden, Victory Royale / Platzierung
+- **Echte 3D-Figuren:** Motion-Capture-Soldat (Stehen/Gehen/Rennen) mit eigener IK für Zielen, Ducken, Springen, Freifall, Gleiten, Heilen, Spitzhacke und Umfallen; Outfit-Farben je Spieler
+- **Grafikstufe Ultra:** Umgebungsverdeckung (SSAO), Sonnenstrahlen (God Rays), Tiefenunschärfe in der Lobby und beim Zielen, 4K-Schatten; Umgebungslicht aus echten HDR-Himmelsfotos; Normal-Maps für Putz, Holz, Stein, Rinde und Boden
 - **Grafik:** Bloom und Filmlook (eigene Nachbearbeitung mit HDR und Kantenglättung), Tageszeit von Nachmittag über goldene Stunde bis Sonnenuntergang (oder fest in der Lobby), spiegelndes Wasser, Nebel, dichtes Gras mit Wind, PBR-Figuren mit Skelett-Animationen, Mündungsfeuer mit Lichtblitz, Staub bei Einschlägen
 - **Explodierende Gaskanister:** Feuerball, Rauchsäule, Druckwelle, Kamera-Wackeln, Schaden (Deckung schützt) und Kettenreaktionen
 - Technik nach Abschnitt 1b: eigene Kollision und Raycasts (Three.js nur zum Rendern), Spatial Grid, fester 60-Hz-Tick mit Interpolation, Object Pooling, F3-Debug
@@ -69,13 +71,17 @@ Auf Mac und PC reicht ein Doppelklick auf `index.html`.
 | Minikarte antippen | M | Große Karte |
 | F3 / ☰ | F3 / Esc | Debug / Pause |
 
-Ruckelt es, im Pause-Menü **Grafik → Niedrig** wählen (ohne Schatten und Gras).
+Die Grafikstufe lässt sich in der Lobby (Grafik) und im Pause-Menü wählen. **Ultra** sieht am besten aus und ist für neuere iPads (M1 und neuer) gedacht. Ruckelt es, **Mittel** oder **Niedrig** wählen (Niedrig: ohne Schatten und Gras).
 
 ## Entwicklung
 
 - `src/00-config.js` … `src/99-main.js` – Spielcode in Modulen; alle Werte stehen im `CONFIG`-Objekt in `00-config.js`
 - `src/template.html` – HTML, CSS, HUD und Menüs
 - `vendor/three.min.js` – Three.js r160 (MIT-Lizenz, siehe `vendor/THREE-LICENSE`)
+- `vendor/three-addons.js` – GLTFLoader, EXRLoader und SkeletonUtils aus Three.js r160 (MIT), gebaut mit `node tools/build-addons.mjs` (braucht `npm i three@0.160.0 esbuild`)
+- `assets/` – werden Base64-kodiert in `index.html` eingebettet (läuft komplett offline):
+  - `soldier.glb` – Soldat mit Animationen aus den Three.js-Beispielen (`examples/models/gltf/Soldier.glb`), ursprünglich von Mixamo (Adobe); Nutzung nach den Mixamo-Bedingungen
+  - `hdri-*.exr` – HDR-Himmel von Poly Haven (CC0), in verkleinerter Fassung aus `@pmndrs/assets` (siehe `assets/PMNDRS-ASSETS-LICENSE`)
 - `node build.mjs` – packt alles in **eine** `index.html` und erzeugt die App-Icons
 
 Nach jeder Änderung an `src/` einmal `node build.mjs` ausführen.

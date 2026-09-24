@@ -184,10 +184,47 @@ function lambert(color) {
   if (!m) { m = new THREE.MeshLambertMaterial({ color }); matCache.set(color, m); }
   return m;
 }
+// Normal-Map aus der Helligkeit einer Canvas-Textur (Sobel-Filter, kachelbar):
+// helle Stellen stehen vor, dunkle Fugen liegen tiefer → Licht zeichnet Relief
+const normalCache = new Map();
+function normalFromTexture(tex, strength) {
+  let n = normalCache.get(tex);
+  if (n) return n;
+  const src = tex.image, size = src.width;
+  const px = src.getContext('2d').getImageData(0, 0, size, size).data;
+  const L = new Float32Array(size * size);
+  for (let i = 0; i < size * size; i++) L[i] = (px[i * 4] * 0.3 + px[i * 4 + 1] * 0.5 + px[i * 4 + 2] * 0.2) / 255;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d'), out = g.createImageData(size, size), o = out.data;
+  const at = (x, y) => L[((y + size) % size) * size + ((x + size) % size)];
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const dx = (at(x + 1, y - 1) + 2 * at(x + 1, y) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x - 1, y) + at(x - 1, y + 1));
+    const dy = (at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1)) - (at(x - 1, y - 1) + 2 * at(x, y - 1) + at(x + 1, y - 1));
+    let nx = -dx * strength, ny = dy * strength, nz = 1;
+    const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+    const k = (y * size + x) * 4;
+    o[k] = (nx * 0.5 + 0.5) * 255; o[k + 1] = (ny * 0.5 + 0.5) * 255; o[k + 2] = (nz * 0.5 + 0.5) * 255; o[k + 3] = 255;
+  }
+  g.putImageData(out, 0, 0);
+  n = new THREE.CanvasTexture(c);
+  n.wrapS = n.wrapT = THREE.RepeatWrapping;
+  n.colorSpace = THREE.NoColorSpace;
+  n.anisotropy = tex.anisotropy;
+  n.repeat.copy(tex.repeat);
+  normalCache.set(tex, n);
+  return n;
+}
+const NORMAL_STRENGTH = { plaster: 1.6, wood: 2.2, stone: 3.0, shingles: 2.6, bark: 3.2, detail: 1.0 };
+
 function texMat(texName, color) {
   const key = texName + '|' + color;
   let m = matCache.get(key);
-  if (!m) { m = new THREE.MeshLambertMaterial({ map: TEX[texName], color }); matCache.set(key, m); }
+  if (!m) {
+    m = new THREE.MeshLambertMaterial({ map: TEX[texName], color });
+    if (NORMAL_STRENGTH[texName]) { m.normalMap = normalFromTexture(TEX[texName], NORMAL_STRENGTH[texName]); m.normalScale.set(1, 1); }
+    matCache.set(key, m);
+  }
   return m;
 }
 function glowMat(color, opacity) {

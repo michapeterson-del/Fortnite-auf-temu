@@ -18,11 +18,15 @@ const CONFIG = {
     fogDensity: 0.0017, exposure: 1.05,
     skyTop: 0x2f7fd8, skyHorizon: 0xbfe3ff, skyBottom: 0xdff1ff,
     shadowArea: 60, visibleActorDistance: 320, visibleItemDistance: 90,
+    hdri: ['hdriPark', 'hdriDawn', 'hdriSunset'], hdriBrightness: 0.7, // Himmelsfotos für Umgebungslicht je Tageszeit
     quality: {
       niedrig: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, grass: 0, post: false },
       mittel:  { pixelRatio: 1.0,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
       hoch:    { pixelRatio: 1.5,  shadows: true,  shadowMap: 2048, grass: 1, post: true },
+      ultra:   { pixelRatio: 1.6,  shadows: true,  shadowMap: 4096, grass: 1, post: true, ultra: true },
     },
+    // Ultra: Umgebungsverdeckung (Radius in m) und Sonnenstrahlen
+    ultra: { aoRadius: 0.9, aoPower: 1.3, aoStrength: 0.85, rays: 0.55, rayLength: 0.65, adsDof: 0.7 },
     defaultQuality: 'mittel',
   },
   world: {

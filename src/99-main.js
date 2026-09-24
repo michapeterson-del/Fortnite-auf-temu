@@ -226,6 +226,7 @@ function render(alpha, dt) {
     computeRig(renderPos, focus.height, camYaw, camPitch, rig, mode, focus.collider);
     camera.position.set(rig.cx, rig.cy, rig.cz);
     camera.lookAt(rig.cx + rig.fx, rig.cy + rig.fy, rig.cz + rig.fz);
+    if (game.camOverride) { camera.position.copy(game.camOverride.pos); camera.lookAt(game.camOverride.look); } // Test-/Fotomodus
     if (camShake > 0.001) {
       const s = camShake * camShake * 0.35;
       camera.position.x += rand(-s, s); camera.position.y += rand(-s, s); camera.position.z += rand(-s, s);
@@ -236,8 +237,15 @@ function render(alpha, dt) {
     const adsFov = it && it.kind === 'weapon' && CONFIG.weapons[it.type].scope ? CONFIG.render.scopeFov : CONFIG.render.adsFov;
     const fov = lerp(CONFIG.render.fov, adsFov, game.adsBlend);
     if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    // Zielen: Umgebung leicht unscharf, Ziel in der Mitte scharf
+    post.dof = game.adsBlend * CONFIG.render.ultra.adsDof * (isScoped() ? 0 : 1);
+    if (post.dof > 0.01) {
+      post.dofFocus = raycastWorld(camera.position.x, camera.position.y, camera.position.z, rig.fx, rig.fy, rig.fz, 200, player.collider) ? worldHit.t : 200;
+      post.dofRange = Math.max(4, post.dofFocus * 0.8);
+    }
     // Figuren
     const vis = CONFIG.render.visibleActorDistance;
+    updateCharFrustum();
     for (const a of actors) {
       if (!a.rpos) a.rpos = new THREE.Vector3();
       a.rpos.lerpVectors(a.prev, a.pos, alpha);
@@ -285,7 +293,7 @@ function frame(now) {
   let dt = (now - lastTime) / 1000;
   lastTime = now;
   if (dt > CONFIG.maxFrameTime) dt = CONFIG.maxFrameTime;
-  if (gameState === 'playing' || gameState === 'ended') {
+  if ((gameState === 'playing' || gameState === 'ended') && !game.freeze) {
     accumulator += dt;
     let n = 0;
     while (accumulator >= TICK && n < CONFIG.maxTicksPerFrame) { tick(TICK); accumulator -= TICK; n++; }
@@ -310,6 +318,7 @@ function applyQuality() {
   scene.traverse((o) => { if (o.userData.grass) o.visible = q.grass > 0; });
   grassField.enabled = q.grass > 0;
   post.enabled = !!q.post;
+  post.ultra = !!q.ultra && post.ultraOk;
   resize();
 }
 
@@ -431,10 +440,16 @@ window.__game = {
   tick: (n) => { for (let i = 0; i < n; i++) tick(TICK); },
   getHeight, raycastWorld, worldHit, evaluatePlacement, placePart, destroyPart, computeBuildTarget,
   makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
-  get player() { return player; }, get state() { return gameState; }, collapseQueue, lobby,
+  get player() { return player; }, get state() { return gameState; }, get gameTime() { return gameTime; }, collapseQueue, lobby, ASSETS,
   fx: { explosion, applyTimeOfDay, setTodMode, barrels, damageBarrel },
-  dbg: { renderer, renderFrame, post, grass: grassField, get gl() { return renderer.getContext(); } },
+  dbg: { renderer, renderFrame, post, grass: grassField, sunDir: SUN_DIR, houses, get gl() { return renderer.getContext(); } },
   startNow: () => { $('lobby').classList.add('hidden'); startGame(); },
 };
 
-setTimeout(init, 30);
+// Erst Modelle und HDR-Himmel entpacken, dann die Insel bauen
+setTimeout(async () => {
+  $('loadingText').textContent = 'Lade Modelle und Himmel …';
+  try { await loadAssets(); } catch (e) { console.warn('Assets nicht geladen, nutze einfache Figuren', e); }
+  $('loadingText').textContent = 'Insel wird erzeugt …';
+  setTimeout(init, 20);
+}, 30);
