@@ -244,7 +244,7 @@ function animateRealCharacter(a, pos, dt) {
     } else if (it && it.kind === 'weapon') {
       // Gewehr-Haltung: rechte Hand an der Brust, linke Hand vorne am Lauf
       const rec = a.recoil * 0.06;
-      _t1.copy(_p1).addScaledVector(_r, 0.13).addScaledVector(_f, 0.3 - rec).addScaledVector(_u, 0.12);
+      _t1.copy(_p1).addScaledVector(_r, 0.16).addScaledVector(_f, 0.34 - rec).addScaledVector(_u, -0.06);
       twoBoneIK(B.armR, B.foreR, B.handR, _t1, _p2.clone().addScaledVector(_u, -1).addScaledVector(_r, 0.5));
       B.armL.getWorldPosition(_t2);
       const reach = it.type === 'pistol' ? 0.05 : it.type === 'smg' ? 0.2 : 0.32;
@@ -258,6 +258,8 @@ function animateRealCharacter(a, pos, dt) {
   }
   // Gegenstand in der rechten Hand ausrichten (Weltlage → Gruppe)
   B.handR.getWorldPosition(_hp);
+  B.foreR.getWorldPosition(_t2);
+  _hp.addScaledVector(_t2.sub(_hp).normalize(), -0.07); // vom Handgelenk in die Handfläche
   g.worldToLocal(_hp);
   m.hand.position.copy(_hp);
   let hp = pitch;
@@ -265,6 +267,16 @@ function animateRealCharacter(a, pos, dt) {
   _aimE.set(hp, 0, 0);
   m.hand.quaternion.setFromEuler(_aimE);
   if (m.held && !(it && it.kind === 'weapon')) m.hand.position.addScaledVector(_u, 0);
+}
+
+// Weltposition der Laufmündung (für Mündungsfeuer und Leuchtspur)
+const MUZZLE_Z = { pistol: 0.3, smg: 0.48, ar: 0.82, shotgun: 0.82, sniper: 1.08 };
+function realMuzzle(a, type, out) {
+  const m = a.model;
+  if (!m.real || !m.root.visible || !m.group.visible || !m.held) return false;
+  out.set(0, 0.08, -(MUZZLE_Z[type] || 0.6));
+  m.hand.updateWorldMatrix(true, false);
+  return out.applyMatrix4(m.hand.matrixWorld), true;
 }
 
 function animateRealLobby(m, t, dt) {

@@ -19,7 +19,7 @@ function planHouses(rnd) {
       minH = Math.min(minH, hh); maxH = Math.max(maxH, hh);
     }
     if (maxH - minH > 4.5 || minH < W.waterLevel + 1) continue;
-    if (Math.hypot(x - W.lake.x, z - W.lake.z) < W.lake.radius + 15) continue;
+    if (Math.hypot(x - W.lake.x, z - W.lake.z) < W.lake.radius * W.lake.shoreWidth + 10) continue;
     if (houses.some((o) => Math.hypot(o.x - x, o.z - z) < W.houseMinDist)) continue;
     houses.push({
       x, z, w, d, ground: Math.round(h * 10) / 10, door: Math.floor(rnd() * 4),

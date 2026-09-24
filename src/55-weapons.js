@@ -218,6 +218,7 @@ function perturb(dx, dy, dz, spread, out) {
 
 const _pd = { x: 0, y: 0, z: 1 };
 // Richtung dx/dy/dz ist bereits normiert und kommt vom Auge der Figur
+const _muz = new THREE.Vector3();
 function fireWeapon(a, dx, dy, dz) {
   const it = currentItem(a);
   if (!it || it.kind !== 'weapon') return false;
@@ -235,7 +236,8 @@ function fireWeapon(a, dx, dy, dz) {
   if (w.auto) { spread += Math.min(0.03, a.burstShots * 0.004); a.burstShots++; }
   actorEye(a, _eye);
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw), rx = Math.cos(a.yaw), rz = -Math.sin(a.yaw);
-  const mx = _eye.x + rx * 0.3 + fx * 0.7, my = _eye.y - 0.3, mz = _eye.z + rz * 0.3 + fz * 0.7;
+  let mx = _eye.x + rx * 0.3 + fx * 0.7, my = _eye.y - 0.3, mz = _eye.z + rz * 0.3 + fz * 0.7;
+  if (realMuzzle(a, it.type, _muz)) { mx = _muz.x; my = _muz.y; mz = _muz.z; }
   for (let p = 0; p < w.pellets; p++) {
     perturb(dx, dy, dz, spread, _pd);
     let ex, ey, ez;

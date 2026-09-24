@@ -46,6 +46,7 @@ function computeRig(pos, height, yaw, pitch, out, mode, ignore) {
   let d = len;
   if (mode !== 'bus' && raycastWorld(out.px, out.py, out.pz, dx, dy, dz, len, ignore)) d = Math.max(C.minDistance, worldHit.t - C.padding);
   out.cx = out.px + dx * d; out.cy = out.py + dy * d; out.cz = out.pz + dz * d;
+  out.cy = Math.max(out.cy, W.waterLevel + 0.35); // Kamera nie unter die Wasseroberfläche
   return out;
 }
 
@@ -439,7 +440,7 @@ window.__game = {
   CONFIG, grid, parts, items, chests, actors, storm, bus, game, input,
   tick: (n) => { for (let i = 0; i < n; i++) tick(TICK); },
   getHeight, raycastWorld, worldHit, evaluatePlacement, placePart, destroyPart, computeBuildTarget,
-  makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, jumpFromBus, openChest, applyDamage,
+  makeWeapon, makeHeal, makeAmmo, addToInventory, selectSlot, fireWeapon, jumpFromBus, openChest, applyDamage,
   get player() { return player; }, get state() { return gameState; }, get gameTime() { return gameTime; }, collapseQueue, lobby, ASSETS,
   fx: { explosion, applyTimeOfDay, setTodMode, barrels, damageBarrel },
   dbg: { renderer, renderFrame, post, grass: grassField, sunDir: SUN_DIR, houses, get gl() { return renderer.getContext(); } },

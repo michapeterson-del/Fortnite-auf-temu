@@ -124,7 +124,7 @@ function groundPhysics(a, dt, jumped) {
   physicsStep(a, dt, jumped);
   if (a.onGround && !a.wasGrounded) {
     const P = CONFIG.player;
-    if (!a.noFallDamage && vyBefore < -P.fallSafeSpeed) {
+    if (!a.noFallDamage && !a.swimming && vyBefore < -P.fallSafeSpeed) {
       applyDamage(a, Math.round((-vyBefore - P.fallSafeSpeed) * P.fallDamagePerMs), null, 'fall');
     }
     a.noFallDamage = false;

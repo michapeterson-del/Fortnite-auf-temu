@@ -26,13 +26,13 @@ const CONFIG = {
       ultra:   { pixelRatio: 1.6,  shadows: true,  shadowMap: 4096, grass: 1, post: true, ultra: true },
     },
     // Ultra: Umgebungsverdeckung (Radius in m) und Sonnenstrahlen
-    ultra: { aoRadius: 0.9, aoPower: 1.3, aoStrength: 0.85, rays: 0.55, rayLength: 0.65, adsDof: 0.7 },
+    ultra: { aoRadius: 0.9, aoPower: 1.3, aoStrength: 0.85, rays: 0.55, rayLength: 0.65, adsDof: 0 },
     defaultQuality: 'mittel',
   },
   world: {
     size: 640, cellSize: 2, maxHeight: 36, waterLevel: 0, seed: 20240917,
     islandFalloffStart: 0.70, islandFalloffEnd: 0.96, seaFloor: -8,
-    lake: { x: 120, z: -80, radius: 55, depth: -4, name: 'Nebelsee' },
+    lake: { x: 120, z: -80, radius: 55, depth: -2.6, shoreWidth: 1.7, name: 'Nebelsee' },
     houses: 16, houseMinDist: 34, houseSpread: 0.66,
     trees: 420, rocks: 120, crates: 36, bushes: 420, grass: 3200, clouds: 28,
     boundsPadding: 2,
@@ -41,7 +41,7 @@ const CONFIG = {
   player: {
     radius: 0.4, height: 1.8, crouchHeight: 1.2, eyeFromTop: 0.15, headRadius: 0.25,
     walkSpeed: 5.5, sprintSpeed: 8.2, crouchSpeed: 2.8, adsSpeedFactor: 0.6, healSpeedFactor: 0.5,
-    waterSpeedFactor: 0.55, waterDepth: 0.4,
+    waterSpeedFactor: 0.55, waterDepth: 0.4, swimDepth: 1.25,
     groundAccel: 55, airAccel: 9, jumpSpeed: 7.4, gravity: 22, maxFallSpeed: 60,
     stepHeight: 0.45, snapDistance: 0.35, maxSubstep: 0.2, groundNormalY: 0.7,
     surfaceClimb: 0.8, collisionPasses: 2,

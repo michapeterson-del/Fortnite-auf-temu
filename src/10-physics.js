@@ -20,7 +20,9 @@ function generateHeights() {
       const d = Math.sqrt(x * x + z * z) / HALF;
       h = lerp(h, W.seaFloor, smoothstep(W.islandFalloffStart, W.islandFalloffEnd, d));
       const ld = Math.hypot(x - L.x, z - L.z);
-      h = lerp(h, L.depth, smoothstep(L.radius, L.radius * 0.45, ld));
+      // flaches Becken mit sanftem Ufer (kein Krater, aus dem man nicht herauskommt)
+      h = lerp(h, L.depth, smoothstep(L.radius * L.shoreWidth, L.radius * 0.35, ld));
+      h = Math.min(h, lerp(L.depth, h, smoothstep(L.radius * 0.35, L.radius * L.shoreWidth * 1.3, ld)));
       heights[j * HM_N + i] = h;
     }
   }
@@ -498,6 +500,15 @@ function physicsStep(a, dt, jumped) {
     resolveCollisions(a);
   }
   if (!a.onGround && a.wasGrounded && !jumped && a.vel.y <= 0) snapToGround(a);
+  // Schwimmen: in tiefem Wasser an der Oberfläche treiben (Kopf bleibt draußen),
+  // man kann weiterlaufen und herausspringen
+  const swimY = W.waterLevel - P.swimDepth;
+  a.swimming = false;
+  if (a.pos.y < swimY && getHeight(a.pos.x, a.pos.z) < swimY) {
+    a.pos.y = swimY;
+    if (a.vel.y < 0) a.vel.y = 0;
+    a.onGround = true; a.swimming = true;
+  }
   a.inWater = a.pos.y < W.waterLevel - P.waterDepth;
   updateActorCollider(a);
 }
